@@ -25,14 +25,14 @@ export default function CollageSettings() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Photos" icon="P" />
+      <SectionHeader title="Фото" icon="P" />
 
       <label data-onboarding="photos" className="group flex items-center justify-center w-full h-24 md:h-20 border-2 border-dashed border-neutral-700/40 rounded-2xl cursor-pointer hover:border-neutral-500/60 transition-all duration-300 bg-neutral-800/20 hover:bg-neutral-800/40 active:bg-neutral-800/60">
         <div className="text-center">
           <div className="w-10 h-10 md:w-8 md:h-8 mx-auto mb-1.5 md:mb-1 rounded-full bg-neutral-800/60 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-700/60 transition-all">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
-          <div className="text-[11px] md:text-[10px] text-neutral-500 font-medium">Drop 6–12 photos</div>
+          <div className="text-[11px] md:text-[10px] text-neutral-500 font-medium">Перетягніть 6–12 фото</div>
         </div>
         <input type="file" multiple accept="image/*" onChange={onDrop} className="hidden" />
       </label>
@@ -40,7 +40,7 @@ export default function CollageSettings() {
       {collage.photos.length > 0 && (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-neutral-600 font-medium">Drag to reorder</p>
+            <p className="text-[10px] text-neutral-600 font-medium">Перетягніть, щоб змінити порядок</p>
             <span className="text-[10px] text-neutral-600 font-mono">{collage.photos.length}/12</span>
           </div>
           <div className="grid grid-cols-4 md:grid-cols-3 gap-2 md:gap-1.5">
@@ -113,7 +113,7 @@ export default function CollageSettings() {
       <Toggle
         checked={collage.allBw}
         onChange={() => setCollage({ allBw: !collage.allBw })}
-        label="All Black & White"
+        label="Все чорно-біле"
       />
     </div>
   );

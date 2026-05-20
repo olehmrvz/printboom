@@ -257,7 +257,7 @@ export default function CanvasPreview() {
               {collage.photos.length === 0 && (
                 <>
                   <Rect width={collageW} height={collageH} stroke="#2a2a2a" strokeWidth={1} dash={[12, 8]} listening={false} />
-                  <Text x={0} y={collageH / 2 - 36} width={collageW} text="drop 6–12 photos" fontSize={72} fontFamily="'Helvetica Neue', sans-serif" fill="#444" align="center" letterSpacing={4} listening={false} />
+                  <Text x={0} y={collageH / 2 - 36} width={collageW} text="перетягніть 6–12 фото" fontSize={72} fontFamily="'Helvetica Neue', sans-serif" fill="#444" align="center" letterSpacing={4} listening={false} />
                 </>
               )}
               {grid.map((cell) => {
@@ -367,7 +367,7 @@ export default function CanvasPreview() {
       </div>
 
       {collage.photos.length > 0 && !ready && (
-        <div className="absolute top-4 left-4 text-xs text-gray-400 animate-pulse">Loading...</div>
+        <div className="absolute top-4 left-4 text-xs text-gray-400 animate-pulse">Завантаження...</div>
       )}
 
       {/* Export button — top right */}

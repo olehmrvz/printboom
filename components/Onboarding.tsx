@@ -15,43 +15,43 @@ interface Step {
 const STEPS: Step[] = [
   {
     selector: '[data-onboarding="photos"]',
-    title: "Загрузите фото",
-    description: "Нажмите сюда или перетащите 6–12 фотографий для коллажа.",
+    title: "Завантажте фото",
+    description: "Натисніть сюди або перетягніть 6–12 фотографій для колажу.",
     tab: "photos",
   },
   {
     selector: '[data-onboarding="templates"]',
-    title: "Выберите текст",
-    description: "Используйте готовые шаблоны или введите свой текст.",
+    title: "Виберіть текст",
+    description: "Використовуйте готові шаблони або введіть свій текст.",
     tab: "typography",
   },
   {
     selector: '[data-onboarding="colors"]',
-    title: "Настройте цвета",
-    description: "Выберите пресет или задайте свои цвета заливки и обводки.",
+    title: "Налаштуйте кольори",
+    description: "Виберіть пресет або задайте свої кольори заливки та обведення.",
     tab: "typography",
   },
   {
     selector: '[data-onboarding="layout"]',
-    title: "Раскладка коллажа",
-    description: "Выберите подходящую сетку для размещения фотографий.",
+    title: "Розкладка колажу",
+    description: "Виберіть відповідну сітку для розміщення фотографій.",
     tab: "photos",
   },
   {
     selector: '[data-onboarding="decorations"]',
-    title: "Добавьте декорации",
-    description: "Подпись, дата, штрихкод и слоган внизу коллажа.",
+    title: "Додайте декорації",
+    description: "Підпис, дата, штрихкод і слоган унизу колажу.",
     tab: "decorations",
   },
   {
     selector: '[data-onboarding="export"]',
-    title: "Сохраните результат",
-    description: "Экспортируйте в PNG с высоким разрешением для печати.",
+    title: "Збережіть результат",
+    description: "Експортуйте в PNG з високою роздільною здатністю для друку.",
   },
   {
     selector: '[data-onboarding="undo"]',
-    title: "Отмена действий",
-    description: "Используйте Undo / Redo или сбросьте всё кнопкой Reset.",
+    title: "Скасування дій",
+    description: "Використовуйте Undo / Redo або скиньте все кнопкою Reset.",
   },
 ];
 
@@ -205,13 +205,13 @@ export default function Onboarding({
       >
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-            Шаг {currentStep + 1} из {STEPS.length}
+            Крок {currentStep + 1} з {STEPS.length}
           </span>
           <button
             onClick={handleSkip}
             className="text-[10px] text-neutral-500 hover:text-white transition-colors uppercase tracking-wider"
           >
-            Пропустить
+            Пропустити
           </button>
         </div>
         <h3 className="text-sm font-semibold text-white mb-1">{step.title}</h3>
@@ -231,7 +231,7 @@ export default function Onboarding({
             onClick={handleNext}
             className="flex-1 px-3 py-2 rounded-lg bg-white text-black text-[11px] font-semibold hover:bg-neutral-200 transition-all"
           >
-            {currentStep === STEPS.length - 1 ? "Завершить" : "Далее"}
+            {currentStep === STEPS.length - 1 ? "Завершити" : "Далі"}
           </button>
         </div>
       </div>

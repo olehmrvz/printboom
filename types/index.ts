@@ -110,12 +110,12 @@ export const TEXT_TEMPLATES: TextTemplate[] = [
 ];
 
 export const LAYOUT_PRESETS: { value: LayoutPreset; label: string }[] = [
-  { value: "grid-4x3", label: "4×3 Grid" },
-  { value: "grid", label: "Classic Grid" },
-  { value: "column-2", label: "2 Columns" },
-  { value: "column-3", label: "3 Columns" },
-  { value: "hero", label: "Hero Image" },
-  { value: "editorial", label: "Editorial" },
+  { value: "grid-4x3", label: "Сітка 4×3" },
+  { value: "grid", label: "Класична сітка" },
+  { value: "column-2", label: "2 колонки" },
+  { value: "column-3", label: "3 колонки" },
+  { value: "hero", label: "Головне зображення" },
+  { value: "editorial", label: "Редакційний" },
 ];
 
 export const DEFAULT_TYPOGRAPHY: TypographyConfig = {

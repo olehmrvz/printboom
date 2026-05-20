@@ -15,7 +15,7 @@ export default function DecorationsSettings() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Decorations" icon="D" />
+      <SectionHeader title="Декорації" icon="D" />
 
       <div data-onboarding="decorations" className="space-y-4">
         {/* Signature */}
@@ -23,7 +23,7 @@ export default function DecorationsSettings() {
           <Toggle
             checked={decorations.signatureEnabled}
             onChange={() => setDecorations({ signatureEnabled: !decorations.signatureEnabled })}
-            label="Signature"
+              label="Підпис"
           />
           {decorations.signatureEnabled && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
@@ -31,7 +31,7 @@ export default function DecorationsSettings() {
                 type="text"
                 value={decorations.signature}
                 onChange={(e) => setDecorations({ signature: e.target.value })}
-                placeholder="Your name"
+                placeholder="Ваше ім'я"
                 className="w-full bg-neutral-800/50 text-white text-base md:text-sm px-4 py-3.5 md:py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
               />
             </div>
@@ -43,7 +43,7 @@ export default function DecorationsSettings() {
           <Toggle
             checked={decorations.dateEnabled}
             onChange={() => setDecorations({ dateEnabled: !decorations.dateEnabled })}
-            label="Date"
+              label="Дата"
           />
           {decorations.dateEnabled && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
@@ -51,7 +51,7 @@ export default function DecorationsSettings() {
                 type="text"
                 value={decorations.date}
                 onChange={(e) => setDecorations({ date: e.target.value })}
-                placeholder="DD.MM.YYYY"
+                placeholder="ДД.ММ.РРРР"
                 className="w-full bg-neutral-800/50 text-white text-base md:text-sm px-4 py-3.5 md:py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
               />
             </div>
@@ -62,7 +62,7 @@ export default function DecorationsSettings() {
         <Toggle
           checked={decorations.showBarcode}
           onChange={() => setDecorations({ showBarcode: !decorations.showBarcode })}
-          label="Barcode"
+          label="Штрихкод"
         />
 
         {/* Tagline */}
@@ -70,7 +70,7 @@ export default function DecorationsSettings() {
           <Toggle
             checked={decorations.taglineEnabled}
             onChange={() => setDecorations({ taglineEnabled: !decorations.taglineEnabled })}
-            label="Tagline"
+              label="Слоган"
           />
           {decorations.taglineEnabled && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
@@ -78,7 +78,7 @@ export default function DecorationsSettings() {
                 type="text"
                 value={decorations.tagline}
                 onChange={(e) => setDecorations({ tagline: e.target.value })}
-                placeholder="forever yours"
+                placeholder="назавжди твоя"
                 className="w-full bg-neutral-800/50 text-white text-base md:text-sm px-4 py-3.5 md:py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
               />
             </div>
@@ -90,7 +90,7 @@ export default function DecorationsSettings() {
       <div className="space-y-3 md:space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-            Bottom Font Size
+            Розмір шрифту знизу
           </label>
           <span className="text-[11px] md:text-[10px] text-neutral-400 font-mono">{decorations.bottomFontSize}px</span>
         </div>
@@ -105,7 +105,7 @@ export default function DecorationsSettings() {
       {/* Bottom & Barcode Color */}
       <div className="space-y-3 md:space-y-2">
         <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-          Bottom & Barcode Color
+          Колір низу та штрихкоду
         </label>
         <div className="relative">
           <input

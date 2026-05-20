@@ -7,10 +7,10 @@ import { TextTemplate } from "@/types";
 type ColorPreset = "white" | "black" | "red-white" | "red-black";
 
 const PRESETS: { key: ColorPreset; label: string; top: string; bottom: string }[] = [
-  { key: "white", label: "All White", top: "#FFFFFF", bottom: "#FFFFFF" },
-  { key: "black", label: "All Black", top: "#000000", bottom: "#000000" },
-  { key: "red-white", label: "Red / White", top: "#FF0000", bottom: "#FFFFFF" },
-  { key: "red-black", label: "Red / Black", top: "#FF0000", bottom: "#000000" },
+  { key: "white", label: "Все біле", top: "#FFFFFF", bottom: "#FFFFFF" },
+  { key: "black", label: "Все чорне", top: "#000000", bottom: "#000000" },
+  { key: "red-white", label: "Червоний / Білий", top: "#FF0000", bottom: "#FFFFFF" },
+  { key: "red-black", label: "Червоний / Чорний", top: "#FF0000", bottom: "#000000" },
 ];
 
 const PRIMARY_TEMPLATES: TextTemplate[] = [
@@ -55,7 +55,7 @@ export default function TypographySettings() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Typography" icon="T" />
+      <SectionHeader title="Типографія" icon="T" />
 
       {/* Primary templates — 2×2 grid */}
       <div data-onboarding="templates" className="grid grid-cols-2 gap-2 md:gap-1.5">
@@ -84,7 +84,7 @@ export default function TypographySettings() {
             type="text"
             value={typography.text}
             onChange={(e) => setTypography({ text: e.target.value.toUpperCase() })}
-            placeholder="ENTER TEXT"
+            placeholder="ВВЕДІТЬ ТЕКСТ"
             className="w-full bg-neutral-800/50 text-white text-sm px-4 py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
           />
         </div>
@@ -100,7 +100,7 @@ export default function TypographySettings() {
               : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30"
           }`}
         >
-          <span>More templates</span>
+            <span>Більше шаблонів</span>
           <svg
             width="12"
             height="12"
@@ -132,7 +132,7 @@ export default function TypographySettings() {
       {/* Color Presets */}
       <div data-onboarding="colors" className="space-y-2">
         <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-          Color Presets
+          Пресети кольорів
         </label>
         <div className="grid grid-cols-2 gap-2 md:gap-1.5">
           {PRESETS.map((p) => {
@@ -165,7 +165,7 @@ export default function TypographySettings() {
       <Toggle
         checked={typography.customColorEnabled}
         onChange={() => setTypography({ customColorEnabled: !typography.customColorEnabled })}
-        label="Custom colors & stroke"
+        label="Власні кольори та обведення"
       />
 
       {/* Custom color controls */}
@@ -173,12 +173,12 @@ export default function TypographySettings() {
         <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex gap-3">
             <ColorInput
-              label="Fill"
+              label="Заливка"
               value={typography.color}
               onChange={(v) => setTypography({ color: v })}
             />
             <ColorInput
-              label="Stroke"
+              label="Обведення"
               value={typography.outlineColor}
               onChange={(v) => setTypography({ outlineColor: v })}
             />
@@ -186,7 +186,7 @@ export default function TypographySettings() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-                Stroke Width
+                Товщина обведення
               </label>
               <span className="text-[10px] text-neutral-400 font-mono">
                 {typography.outlineThickness}px
