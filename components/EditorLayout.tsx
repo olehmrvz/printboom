@@ -30,9 +30,9 @@ export default function EditorLayout() {
 
         {/* Mobile Tabs */}
         <div className="md:hidden flex items-center gap-1 px-2 pb-2 shrink-0">
-          <MobileTabButton tab="typography" active={mobileTab} onClick={setMobileTab} label="Text" />
-          <MobileTabButton tab="photos" active={mobileTab} onClick={setMobileTab} label="Photos" />
-          <MobileTabButton tab="decorations" active={mobileTab} onClick={setMobileTab} label="Decor" />
+          <MobileTabButton tab="typography" active={mobileTab} onClick={setMobileTab} label="Текст" />
+          <MobileTabButton tab="photos" active={mobileTab} onClick={setMobileTab} label="Фото" />
+          <MobileTabButton tab="decorations" active={mobileTab} onClick={setMobileTab} label="Декор" />
         </div>
 
         {/* Settings */}
