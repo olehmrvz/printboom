@@ -39,10 +39,15 @@ export default function CanvasPreview() {
   const [imgs, setImgs] = useState<Record<string, HTMLImageElement>>({});
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0.25);
+
+  useEffect(() => {
+    document.fonts.ready.then(() => setFontLoaded(true));
+  }, []);
 
   useEffect(() => {
     let loaded = 0;
@@ -94,7 +99,7 @@ export default function CanvasPreview() {
 
   const autoFit = useMemo(
     () => calcAutoFitFontSize(typography.text, collageW, typography.fontFamily, 560, 480),
-    [typography.text, collageW, typography.fontFamily]
+    [typography.text, collageW, typography.fontFamily, fontLoaded]
   );
 
   const fs = autoFit.fontSize;
@@ -137,7 +142,7 @@ export default function CanvasPreview() {
       }
     }
     return words.slice(0, bestSplit).join(" ") + "\n" + words.slice(bestSplit).join(" ");
-  }, [decorations.tagline, bottomFontSize, typography.fontFamily, rightColW]);
+  }, [decorations.tagline, bottomFontSize, typography.fontFamily, rightColW, fontLoaded]);
 
   const taglineLineCount = processedTagline.includes("\n") ? 2 : (processedTagline ? 1 : 0);
   const row2Height = bottomFontSize * (taglineLineCount <= 1 ? 1.5 : taglineLineCount);
@@ -173,24 +178,18 @@ export default function CanvasPreview() {
     const stage = stageRef.current;
     if (!stage) return;
 
-    // Save current state
     const originalW = stage.width();
     const originalH = stage.height();
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    // Resize stage to export dimensions and match the preview scale
     stage.width(EXPORT_W);
     stage.height(EXPORT_H);
     stage.scale({ x: EXPORT_W / FULL_W, y: EXPORT_H / FULL_H });
     stage.draw();
 
-    const dataURL = stage.toDataURL({
-      pixelRatio: 2,
-      mimeType: "image/png",
-    });
+    const dataURL = stage.toDataURL({ pixelRatio: 3, mimeType: "image/png" });
 
-    // Restore preview dimensions
     stage.width(originalW);
     stage.height(originalH);
     stage.scale({ x: originalScaleX, y: originalScaleY });
