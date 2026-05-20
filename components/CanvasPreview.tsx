@@ -8,6 +8,7 @@ import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typogr
 import { generateCollageGrid } from "@/utils/collageGenerator";
 import { generateBarcodeSVG } from "@/utils/barcodeUtils";
 import { formatDate } from "@/utils/exportUtils";
+import { generatePrintPDF } from "@/utils/pdfPrintExport";
 import PrintModal from "./PrintModal";
 
 const FULL_W = 3000;
@@ -231,7 +232,27 @@ export default function CanvasPreview() {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    const dataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+    // Get raster layer (photos + barcode, text hidden) for PDF embedding
+    const textNodes = stage.find("Text");
+    const rectNodes = stage.find("Rect");
+    textNodes.forEach((node: any) => node.visible(false));
+    rectNodes.forEach((node: any) => node.visible(false));
+    stage.draw();
+    const rasterDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+
+    // Get full canvas (text + raster) for PNG preview
+    textNodes.forEach((node: any) => node.visible(true));
+    rectNodes.forEach((node: any) => node.visible(true));
+    stage.draw();
+    const fullDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+
+    // Generate PDF with vector text at 2x
+    let pdfBytes: Uint8Array | null = null;
+    try {
+      pdfBytes = await generatePrintPDF(typography, decorations, rasterDataURL);
+    } catch (e) {
+      console.error("PDF generation failed", e);
+    }
 
     stage.width(originalW);
     stage.height(originalH);
@@ -239,10 +260,13 @@ export default function CanvasPreview() {
     stage.draw();
 
     try {
-      const blob = dataURLToBlob(dataURL);
+      const pngBlob = dataURLToBlob(fullDataURL);
       const formData = new FormData();
-      formData.append("photo", blob, "printboom.png");
+      formData.append("photo", pngBlob, "printboom.png");
       formData.append("instagramNick", nick);
+      if (pdfBytes) {
+        formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
+      }
 
       const res = await fetch("/api/send-to-print", { method: "POST", body: formData });
       const json = await res.json();
