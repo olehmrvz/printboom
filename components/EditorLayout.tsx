@@ -26,10 +26,6 @@ export default function EditorLayout() {
           <span className="text-[13px] font-bold tracking-[0.25em] text-white/90 uppercase">
             Printboom
           </span>
-          <div className="ml-auto flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-            <span className="text-[9px] text-neutral-600 font-medium tracking-wider">LIVE</span>
-          </div>
         </div>
 
         {/* Mobile Tabs */}

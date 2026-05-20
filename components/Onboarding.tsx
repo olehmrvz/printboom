@@ -46,7 +46,7 @@ const STEPS: Step[] = [
   {
     selector: '[data-onboarding="export"]',
     title: "Сохраните результат",
-    description: "Экспортируйте в PNG (с upscaling ×2) или PDF для печати.",
+    description: "Экспортируйте в PNG с высоким разрешением для печати.",
   },
   {
     selector: '[data-onboarding="undo"]',

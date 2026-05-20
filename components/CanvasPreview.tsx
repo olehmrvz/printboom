@@ -8,7 +8,6 @@ import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typogr
 import { generateCollageGrid } from "@/utils/collageGenerator";
 import { generateBarcodeSVG } from "@/utils/barcodeUtils";
 import { formatDate } from "@/utils/exportUtils";
-import { generatePDF } from "@/utils/pdfExport";
 
 const FULL_W = 3000;
 const FULL_H = 4500;
@@ -203,38 +202,6 @@ export default function CanvasPreview() {
     document.body.removeChild(link);
   };
 
-  const handleExportPDF = async () => {
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const hasRasterContent =
-      collage.photos.length > 0 || (decorations.showBarcode && barcode);
-
-    // Hide all text and rect nodes so only photos/barcode remain in the raster layer
-    const textNodes = stage.find("Text");
-    const rectNodes = stage.find("Rect");
-    textNodes.forEach((node: any) => node.visible(false));
-    rectNodes.forEach((node: any) => node.visible(false));
-    stage.draw();
-
-    let dataURL: string | null = null;
-    if (hasRasterContent) {
-      dataURL = stage.toDataURL({ pixelRatio: 4, mimeType: "image/png" });
-    }
-
-    // Restore nodes
-    textNodes.forEach((node: any) => node.visible(true));
-    rectNodes.forEach((node: any) => node.visible(true));
-    stage.draw();
-
-    try {
-      await generatePDF(typography, decorations, dataURL);
-    } catch (err) {
-      console.error("PDF export failed:", err);
-      alert("PDF export failed. See console for details.");
-    }
-  };
-
   // Auto background based on text color
   const isLightText = isLightColor(typography.color);
   const previewBg = isLightText ? "#171717" : "#f4f4f0";
@@ -403,19 +370,13 @@ export default function CanvasPreview() {
         <div className="absolute top-4 left-4 text-xs text-gray-400 animate-pulse">Loading...</div>
       )}
 
-      {/* Export buttons — top right, same width */}
-      <div data-onboarding="export" className="absolute top-3 right-3 md:top-4 md:right-4 flex flex-row md:flex-col gap-1.5 md:gap-2 z-10">
+      {/* Export button — top right */}
+      <div data-onboarding="export" className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
         <button
           onClick={handleExport}
           className="px-3 py-2 md:px-4 md:py-2.5 bg-sky-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-sky-500 transition-all uppercase tracking-wider shadow-lg shadow-sky-900/30 hover:shadow-sky-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
         >
           PNG
-        </button>
-        <button
-          onClick={handleExportPDF}
-          className="px-3 py-2 md:px-4 md:py-2.5 bg-emerald-700 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-emerald-600 transition-all uppercase tracking-wider shadow-lg shadow-emerald-900/30 hover:shadow-emerald-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
-        >
-          PDF
         </button>
       </div>
 
