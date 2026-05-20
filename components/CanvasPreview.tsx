@@ -34,22 +34,15 @@ function isLightColor(color: string): boolean {
   return brightness > 128;
 }
 
-const FONT_FAMILY = "'Druk Wide Cyr', sans-serif";
-
 export default function CanvasPreview() {
   const { typography, collage, decorations, updatePhoto, undo, redo, reset } = useEditorStore();
   const [imgs, setImgs] = useState<Record<string, HTMLImageElement>>({});
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
-  const [fontLoaded, setFontLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0.25);
-
-  useEffect(() => {
-    document.fonts.load("700 120px 'Druk Wide Cyr'").then(() => setFontLoaded(true));
-  }, []);
 
   useEffect(() => {
     let loaded = 0;
@@ -280,7 +273,7 @@ export default function CanvasPreview() {
               {collage.photos.length === 0 && (
                 <>
                   <Rect width={collageW} height={collageH} stroke="#2a2a2a" strokeWidth={1} dash={[12, 8]} listening={false} />
-                  <Text x={0} y={collageH / 2 - 12} width={collageW} text="drop 6–12 photos" fontSize={24} fontFamily="'Helvetica Neue', sans-serif" fill="#444" align="center" letterSpacing={3} listening={false} />
+                  <Text x={0} y={collageH / 2 - 36} width={collageW} text="drop 6–12 photos" fontSize={72} fontFamily="'Helvetica Neue', sans-serif" fill="#444" align="center" letterSpacing={4} listening={false} />
                 </>
               )}
               {grid.map((cell) => {
