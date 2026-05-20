@@ -110,8 +110,37 @@ export default function CanvasPreview() {
 
   // Bottom strip layout
   const bottomFontSize = decorations.bottomFontSize;
-  const taglineLineCount = bottomFontSize > 150 ? 2 : 1;
-  const row2Height = bottomFontSize * (taglineLineCount === 1 ? 1.5 : taglineLineCount);
+  const rightColW = 1400;
+  const rightColX = FULL_W - PAD_X - rightColW;
+
+  // Smart tagline splitting: always wrap to 2 lines when text overflows right column
+  const processedTagline = useMemo(() => {
+    const raw = (decorations.tagline || "").toUpperCase();
+    if (!raw) return raw;
+    const words = raw.split(/\s+/);
+    if (words.length <= 1) return raw;
+    const fullWidth = measureTextWidth(raw, bottomFontSize, 0, typography.fontFamily);
+    if (fullWidth <= rightColW) return raw;
+    let bestSplit = 1;
+    let bestDiff = Infinity;
+    for (let i = 1; i < words.length; i++) {
+      const line1 = words.slice(0, i).join(" ");
+      const line2 = words.slice(i).join(" ");
+      const w1 = measureTextWidth(line1, bottomFontSize, 0, typography.fontFamily);
+      const w2 = measureTextWidth(line2, bottomFontSize, 0, typography.fontFamily);
+      if (w1 <= rightColW && w2 <= rightColW) {
+        const diff = Math.abs(w1 - w2);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestSplit = i;
+        }
+      }
+    }
+    return words.slice(0, bestSplit).join(" ") + "\n" + words.slice(bestSplit).join(" ");
+  }, [decorations.tagline, bottomFontSize, typography.fontFamily, rightColW]);
+
+  const taglineLineCount = processedTagline.includes("\n") ? 2 : (processedTagline ? 1 : 0);
+  const row2Height = bottomFontSize * (taglineLineCount <= 1 ? 1.5 : taglineLineCount);
   const bottomStripHeight = bottomFontSize + 20 + row2Height + 20;
   const bottomStripY = FULL_H - bottomStripHeight - 40;
 
@@ -137,17 +166,6 @@ export default function CanvasPreview() {
 
   const barcodeW = Math.min(700, collageW * 0.58);
   const barcodeH = row2Height;
-
-  const rightColW = 1400;
-  const rightColX = FULL_W - PAD_X - rightColW;
-
-  // Force tagline onto two lines when font size is large
-  const rawTagline = (decorations.tagline || "").toUpperCase();
-  const taglineWords = rawTagline.split(/\s+/);
-  const processedTagline =
-    bottomFontSize > 150 && taglineWords.length >= 2
-      ? taglineWords[0] + "\n" + taglineWords.slice(1).join(" ")
-      : rawTagline;
 
   const handleExport = async () => {
     const EXPORT_W = 3500;
