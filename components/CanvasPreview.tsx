@@ -206,6 +206,15 @@ export default function CanvasPreview() {
     document.body.removeChild(link);
   };
 
+  function dataURLToBlob(dataURL: string): Blob {
+    const parts = dataURL.split(",");
+    const mime = parts[0].match(/:(.*?);/)![1];
+    const raw = atob(parts[1]);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
   const handleSendToPrint = async (nick: string) => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -217,12 +226,12 @@ export default function CanvasPreview() {
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    stage.width(3500);
-    stage.height(Math.round(FULL_H * (3500 / FULL_W)));
-    stage.scale({ x: 3500 / FULL_W, y: Math.round(FULL_H * (3500 / FULL_W)) / FULL_H });
+    stage.width(FULL_W);
+    stage.height(FULL_H);
+    stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    const dataURL = stage.toDataURL({ pixelRatio: 3, mimeType: "image/png" });
+    const dataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
 
     stage.width(originalW);
     stage.height(originalH);
@@ -230,11 +239,12 @@ export default function CanvasPreview() {
     stage.draw();
 
     try {
-      const res = await fetch("/api/send-to-print", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: dataURL, instagramNick: nick }),
-      });
+      const blob = dataURLToBlob(dataURL);
+      const formData = new FormData();
+      formData.append("photo", blob, "printboom.png");
+      formData.append("instagramNick", nick);
+
+      const res = await fetch("/api/send-to-print", { method: "POST", body: formData });
       const json = await res.json();
       if (json.success) {
         setPrintStatus("success");
@@ -242,9 +252,9 @@ export default function CanvasPreview() {
         setPrintStatus("error");
         setPrintError(json.error || "Невідома помилка");
       }
-    } catch {
+    } catch (err: any) {
       setPrintStatus("error");
-      setPrintError("Мережева помилка");
+      setPrintError(err?.message || "Мережева помилка");
     }
   };
 
