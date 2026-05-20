@@ -8,6 +8,7 @@ import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typogr
 import { generateCollageGrid } from "@/utils/collageGenerator";
 import { generateBarcodeSVG } from "@/utils/barcodeUtils";
 import { formatDate } from "@/utils/exportUtils";
+import PrintModal from "./PrintModal";
 
 const FULL_W = 3000;
 const FULL_H = 4500;
@@ -43,6 +44,9 @@ export default function CanvasPreview() {
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0.25);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printStatus, setPrintStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [printError, setPrintError] = useState("");
 
   useEffect(() => {
     document.fonts.ready.then(() => setFontLoaded(true));
@@ -200,6 +204,48 @@ export default function CanvasPreview() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleSendToPrint = async (nick: string) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    setPrintStatus("sending");
+
+    const originalW = stage.width();
+    const originalH = stage.height();
+    const originalScaleX = stage.scaleX();
+    const originalScaleY = stage.scaleY();
+
+    stage.width(3500);
+    stage.height(Math.round(FULL_H * (3500 / FULL_W)));
+    stage.scale({ x: 3500 / FULL_W, y: Math.round(FULL_H * (3500 / FULL_W)) / FULL_H });
+    stage.draw();
+
+    const dataURL = stage.toDataURL({ pixelRatio: 3, mimeType: "image/png" });
+
+    stage.width(originalW);
+    stage.height(originalH);
+    stage.scale({ x: originalScaleX, y: originalScaleY });
+    stage.draw();
+
+    try {
+      const res = await fetch("/api/send-to-print", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataURL, instagramNick: nick }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setPrintStatus("success");
+      } else {
+        setPrintStatus("error");
+        setPrintError(json.error || "Невідома помилка");
+      }
+    } catch {
+      setPrintStatus("error");
+      setPrintError("Мережева помилка");
+    }
   };
 
   // Auto background based on text color
@@ -370,15 +416,30 @@ export default function CanvasPreview() {
         <div className="absolute top-4 left-4 text-xs text-gray-400 animate-pulse">Завантаження...</div>
       )}
 
-      {/* Export button — top right */}
-      <div data-onboarding="export" className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
+      {/* Export & send to print — top right */}
+      <div data-onboarding="export" className="absolute top-3 right-3 md:top-4 md:right-4 flex flex-col gap-1.5 z-10">
         <button
           onClick={handleExport}
           className="px-3 py-2 md:px-4 md:py-2.5 bg-sky-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-sky-500 transition-all uppercase tracking-wider shadow-lg shadow-sky-900/30 hover:shadow-sky-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
         >
           PNG
         </button>
+        <button
+          onClick={() => { setShowPrintModal(true); setPrintStatus("idle"); }}
+          className="px-3 py-2 md:px-4 md:py-2.5 bg-purple-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-purple-500 transition-all uppercase tracking-wider shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
+        >
+          На друк
+        </button>
       </div>
+
+      {showPrintModal && (
+        <PrintModal
+          onClose={() => setShowPrintModal(false)}
+          onSubmit={handleSendToPrint}
+          status={printStatus}
+          errorMsg={printError}
+        />
+      )}
 
       {/* Undo / Redo / Reset — bottom center */}
       <div data-onboarding="undo" className="absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-5 flex items-center gap-2 md:gap-1.5 bg-black/50 backdrop-blur-md rounded-full px-3 py-2 md:px-2 md:py-1.5 z-20 border border-white/10 shadow-xl">
