@@ -8,7 +8,7 @@ export default function DecorationsSettings() {
   const { decorations, setDecorations } = useEditorStore();
 
   useEffect(() => {
-    if (decorations.dateAuto && !decorations.date) {
+    if (decorations.dateEnabled && !decorations.date) {
       setDecorations({ date: formatDate() });
     }
   }, []);
@@ -46,21 +46,14 @@ export default function DecorationsSettings() {
             label="Date"
           />
           {decorations.dateEnabled && (
-            <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-2">
-              <ToggleSmall
-                checked={decorations.dateAuto}
-                onChange={() => setDecorations({ dateAuto: !decorations.dateAuto })}
-                label="Auto format DD.MM.YYYY"
+            <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+              <input
+                type="text"
+                value={decorations.date}
+                onChange={(e) => setDecorations({ date: e.target.value })}
+                placeholder="DD.MM.YYYY"
+                className="w-full bg-neutral-800/50 text-white text-base md:text-sm px-4 py-3.5 md:py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
               />
-              {!decorations.dateAuto && (
-                <input
-                  type="text"
-                  value={decorations.date}
-                  onChange={(e) => setDecorations({ date: e.target.value })}
-                  placeholder="DD.MM.YYYY"
-                  className="w-full bg-neutral-800/50 text-white text-base md:text-sm px-4 py-3.5 md:py-3 rounded-xl outline-none border border-neutral-700/40 focus:border-white/25 focus:ring-1 focus:ring-white/10 transition-all placeholder:text-neutral-600"
-                />
-              )}
             </div>
           )}
         </div>
@@ -169,36 +162,6 @@ function Toggle({
         />
       </div>
       <span className="text-[13px] md:text-[11px] text-neutral-400 group-hover:text-neutral-300 transition-colors select-none">
-        {label}
-      </span>
-      <input type="checkbox" checked={checked} onChange={onChange} className="hidden" />
-    </label>
-  );
-}
-
-function ToggleSmall({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <label className="flex items-center gap-3 cursor-pointer group ml-12 py-1">
-      <div
-        className={`relative w-8 h-[18px] md:w-7 md:h-4 rounded-full transition-colors duration-200 shrink-0 ${
-          checked ? "bg-white/80" : "bg-neutral-700/40 group-hover:bg-neutral-700/60"
-        }`}
-      >
-        <div
-          className={`absolute top-[2px] left-[2px] w-3.5 h-3.5 md:w-3 md:h-3 rounded-full bg-black shadow-sm transition-transform duration-200 ${
-            checked ? "translate-x-3.5 md:translate-x-3" : "translate-x-0"
-          }`}
-        />
-      </div>
-      <span className="text-[11px] md:text-[10px] text-neutral-500 group-hover:text-neutral-400 transition-colors select-none">
         {label}
       </span>
       <input type="checkbox" checked={checked} onChange={onChange} className="hidden" />

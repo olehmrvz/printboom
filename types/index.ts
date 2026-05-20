@@ -145,7 +145,7 @@ export const DEFAULT_DECORATIONS: DecorationsConfig = {
   signature: "",
   signatureEnabled: false,
   date: "",
-  dateAuto: true,
+  dateAuto: false,
   dateEnabled: true,
   showBarcode: true,
   tagline: "",
