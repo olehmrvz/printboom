@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/prisma";
+
 export async function POST(request: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -21,6 +23,20 @@ export async function POST(request: Request) {
       { success: false, error: "Missing PDF or instagramNick" },
       { status: 400 }
     );
+  }
+
+  // Save order to database
+  let order;
+  try {
+    order = await prisma.order.create({
+      data: {
+        instagramNick: instagramNick.trim().replace(/^@/, ""),
+        status: "NEW",
+      },
+    });
+  } catch (err: any) {
+    console.error("DB save error:", err.message);
+    return Response.json({ success: false, error: "Database error" }, { status: 500 });
   }
 
   const now = new Date();
@@ -75,5 +91,5 @@ export async function POST(request: Request) {
     console.error("Separator send error:", err.message);
   }
 
-  return Response.json({ success: true });
+  return Response.json({ success: true, orderId: order.id });
 }
