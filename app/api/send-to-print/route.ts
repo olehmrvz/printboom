@@ -43,24 +43,24 @@ export async function POST(request: Request) {
   const dd = String(now.getDate()).padStart(2, "0");
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const yyyy = now.getFullYear();
-  const caption = `@${instagramNick} | ${dd}.${mm}.${yyyy}`;
-  const filenameBase = `printboom_${instagramNick}_${dd}.${mm}.${yyyy}`;
+  const dateStr = `${dd}.${mm}.${yyyy}`;
+  const caption = `@${instagramNick} | ${dateStr} | 🆕 Нове`;
+  const filenameBase = `printboom_${instagramNick}_${dateStr}`;
 
   const pdfBuf = Buffer.from(await pdf.arrayBuffer());
 
-  // Build inline keyboard for Telegram
+  // Build inline keyboard for Telegram — attached to PDF only
   const replyMarkup = {
     inline_keyboard: [
       [
-        { text: "🖨️ В друк", callback_data: `status:PRINTING:${order.id}` },
-        { text: "✅ Готове", callback_data: `status:DONE:${order.id}` },
+        { text: "🖨️ В друк", callback_data: `status:PRINTING` },
+        { text: "✅ Готове", callback_data: `status:DONE` },
       ],
-      [{ text: "❌ Скасувати", callback_data: `status:CANCELLED:${order.id}` }],
+      [{ text: "❌ Скасувати", callback_data: `status:CANCELLED` }],
     ],
   };
 
-  // Send PDF
-  let tgMessageId: number | null = null;
+  // Send PDF with inline keyboard
   try {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
@@ -79,32 +79,11 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    tgMessageId = data.result?.message_id ?? null;
   } catch (err: any) {
     return Response.json(
       { success: false, error: `PDF: ${err.message || "Network error"}` },
       { status: 502 }
     );
-  }
-
-  // Send order separator with order ID reference
-  try {
-    const sepText = `\n━━━━━━━━━━━━━━━━━━━━\n📦 ЗАМОВЛЕННЯ #${order.id}\n@${instagramNick}\n━━━━━━━━━━━━━━━━━━━━\n`;
-    await fetch(
-      `https://api.telegram.org/bot${token}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: sepText,
-          parse_mode: "HTML",
-          reply_markup: replyMarkup,
-        }),
-      }
-    );
-  } catch (err: any) {
-    console.error("Separator send error:", err.message);
   }
 
   return Response.json({ success: true, orderId: order.id });
