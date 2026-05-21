@@ -55,6 +55,11 @@ export default function CanvasPreview() {
 
   useEffect(() => {
     if (fontLoaded && stageRef.current) {
+      const texts = stageRef.current.find("Text");
+      texts.forEach((node: any) => {
+        node.clearCache();
+        node.setAttr("text", node.text());
+      });
       stageRef.current.draw();
     }
   }, [fontLoaded]);
@@ -238,24 +243,17 @@ export default function CanvasPreview() {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    // Get raster layer (photos + barcode, text hidden) for PDF embedding
-    const textNodes = stage.find("Text");
-    const rectNodes = stage.find("Rect");
-    textNodes.forEach((node: any) => node.visible(false));
-    rectNodes.forEach((node: any) => node.visible(false));
+    // Export full canvas (everything visible) at 2x for high-quality PDF (300 DPI)
     stage.draw();
-    const rasterDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+    const pdfDataURL = stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
 
-    // Get full canvas (text + raster) for PNG preview
-    textNodes.forEach((node: any) => node.visible(true));
-    rectNodes.forEach((node: any) => node.visible(true));
-    stage.draw();
+    // Export full canvas at 1x for PNG preview sent to Telegram
     const fullDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
 
-    // Generate PDF with vector text at 2x
+    // Generate PDF with embedded high-res raster
     let pdfBytes: Uint8Array | null = null;
     try {
-      pdfBytes = await generatePrintPDF(typography, decorations, rasterDataURL);
+      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
     }
