@@ -8,9 +8,10 @@ interface PrintModalProps {
   status: "idle" | "sending" | "success" | "error";
   errorMsg?: string;
   previewUrl?: string | null;
+  previewBg?: string;
 }
 
-export default function PrintModal({ onClose, onSubmit, status, errorMsg, previewUrl }: PrintModalProps) {
+export default function PrintModal({ onClose, onSubmit, status, errorMsg, previewUrl, previewBg }: PrintModalProps) {
   const [screen, setScreen] = useState<1 | 2>(1);
   const [nick, setNick] = useState("");
   const [designConfirmed, setDesignConfirmed] = useState(false);
@@ -161,45 +162,48 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg, previe
         {screen === 2 && (
           <>
             <div className="space-y-4">
-              {/* Preview */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
-                  Ваш дизайн
-                </label>
-                <div className="relative rounded-xl overflow-hidden border border-neutral-700/40 bg-neutral-900/50">
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="Прев'ю дизайну"
-                      className="w-full h-auto object-contain max-h-[200px]"
-                    />
-                  ) : (
-                    <div className="w-full h-[120px] flex items-center justify-center text-neutral-500 text-[12px]">
-                      Завантаження прев'ю...
-                    </div>
-                  )}
-                </div>
-                <label className="flex items-center gap-2.5 cursor-pointer group py-1">
-                  <div className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                    designConfirmed
-                      ? "bg-white border-white"
-                      : "border-neutral-500 group-hover:border-neutral-400"
-                  }`}>
-                    {designConfirmed && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+              {/* Preview + Design confirmed */}
+              <label className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-neutral-800/30 border border-neutral-700/20 hover:border-neutral-600/30 transition-all">
+                <div className="flex-1 space-y-2.5">
+                  <div className="text-[13px] font-medium text-white">Ваш дизайн</div>
+                  <div
+                    className="relative rounded-xl overflow-hidden border border-neutral-600/30"
+                    style={{ backgroundColor: previewBg }}
+                  >
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="Прев'ю дизайну"
+                        className="w-full h-auto object-contain max-h-[200px]"
+                      />
+                    ) : (
+                      <div className="w-full h-[120px] flex items-center justify-center text-neutral-500 text-[12px]">
+                        Завантаження прев'ю...
+                      </div>
                     )}
                   </div>
-                  <span className="text-[12px] text-neutral-300">Я перевірив дизайн — все вірно</span>
-                  <input
-                    type="checkbox"
-                    checked={designConfirmed}
-                    onChange={(e) => setDesignConfirmed(e.target.checked)}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+                  <div className="flex items-center gap-2.5 py-0.5">
+                    <div className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                      designConfirmed
+                        ? "bg-white border-white"
+                        : "border-neutral-500 group-hover:border-neutral-400"
+                    }`}>
+                      {designConfirmed && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-[12px] text-neutral-300">Я перевірив дизайн — все вірно</span>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={designConfirmed}
+                  onChange={(e) => setDesignConfirmed(e.target.checked)}
+                  className="hidden"
+                />
+              </label>
 
               {/* Checkbox: Nick confirmed */}
               <label className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-neutral-800/30 border border-neutral-700/20 hover:border-neutral-600/30 transition-all">

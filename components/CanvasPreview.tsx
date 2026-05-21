@@ -56,6 +56,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const [printStatus, setPrintStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [printError, setPrintError] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewBg, setPreviewBg] = useState<string>("#f4f4f0");
 
   useImperativeHandle(ref, () => ({
     openPrintModal: () => {
@@ -64,6 +65,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
         const url = stage.toDataURL({ pixelRatio: 0.25, mimeType: "image/png" });
         setPreviewUrl(url);
       }
+      setPreviewBg(isLightText ? "#171717" : "#f4f4f0");
       setShowPrintModal(true);
       setPrintStatus("idle");
     },
@@ -271,7 +273,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
 
   // Auto background based on text color
   const isLightText = isLightColor(typography.color);
-  const previewBg = isLightText ? "#171717" : "#f4f4f0";
+  const canvasBg = isLightText ? "#171717" : "#f4f4f0";
 
   const handleDragEnter = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes("Files")) {
@@ -312,7 +314,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className="w-full h-full relative overflow-hidden flex items-center justify-center"
-      style={{ backgroundColor: previewBg }}
+      style={{ backgroundColor: canvasBg }}
     >
       {showDropOverlay && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 pointer-events-none">
@@ -502,6 +504,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
           status={printStatus}
           errorMsg={printError}
           previewUrl={previewUrl}
+          previewBg={previewBg}
         />
       )}
 
