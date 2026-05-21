@@ -31,6 +31,8 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   }
 
+  console.log("[TG Webhook] callback_data:", data, "msg.caption:", msg.caption, "hasDocument:", !!msg.document);
+
   // Parse callback_data: "status:PRINTING"
   const match = data.match(/^status:(\w+)$/);
   if (!match) {
@@ -73,9 +75,9 @@ export async function POST(request: Request) {
     ],
   ];
 
-  // Edit message caption
-  if (msg.document) {
-    await fetch(`https://api.telegram.org/bot${token}/editMessageCaption`, {
+  // Edit message caption (works for any message with caption, document or not)
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/editMessageCaption`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -85,6 +87,13 @@ export async function POST(request: Request) {
         reply_markup: { inline_keyboard: updatedKeyboard },
       }),
     });
+    const tgData = await res.json();
+    console.log("[TG Webhook] editMessageCaption response:", JSON.stringify(tgData));
+    if (!tgData.ok) {
+      console.error("[TG Webhook] editMessageCaption failed:", tgData.description);
+    }
+  } catch (err: any) {
+    console.error("[TG Webhook] editMessageCaption error:", err.message);
   }
 
   // Answer callback
