@@ -46,7 +46,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [showDropOverlay, setShowDropOverlay] = useState(false);
+  const dragCounterRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
@@ -266,20 +267,29 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const isLightText = isLightColor(typography.color);
   const previewBg = isLightText ? "#171717" : "#f4f4f0";
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("Files")) {
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      if (dragCounterRef.current === 1) setShowDropOverlay(true);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes("Files")) {
       e.preventDefault();
-      setIsDragOver(true);
     }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    setIsDragOver(false);
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setShowDropOverlay(false);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    dragCounterRef.current = 0;
+    setShowDropOverlay(false);
     const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
     if (files.length === 0) return;
     const maxNew = Math.max(0, 12 - collage.photos.length);
@@ -291,14 +301,15 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   return (
     <div
       ref={containerRef}
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className="w-full h-full relative overflow-hidden flex items-center justify-center"
       style={{ backgroundColor: previewBg }}
     >
-      {isDragOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm border-4 border-dashed border-white/40 rounded-xl m-4">
+      {showDropOverlay && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 pointer-events-none">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 flex items-center justify-center">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
