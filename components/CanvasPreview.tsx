@@ -9,6 +9,7 @@ import { generateCollageGrid } from "@/utils/collageGenerator";
 import { generateBarcodeSVG } from "@/utils/barcodeUtils";
 import { formatDate } from "@/utils/exportUtils";
 import { generatePrintPDF } from "@/utils/pdfPrintExport";
+import { createPhotos } from "@/utils/photoUtils";
 import PrintModal from "./PrintModal";
 
 const FULL_W = 3000;
@@ -40,11 +41,12 @@ export interface CanvasPreviewRef {
 }
 
 const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
-  const { typography, collage, decorations, updatePhoto } = useEditorStore();
+  const { typography, collage, decorations, updatePhoto, addPhotos } = useEditorStore();
   const [imgs, setImgs] = useState<Record<string, HTMLImageElement>>({});
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
@@ -264,8 +266,49 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const isLightText = isLightColor(typography.color);
   const previewBg = isLightText ? "#171717" : "#f4f4f0";
 
+  const handleDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("Files")) {
+      e.preventDefault();
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+    const maxNew = Math.max(0, 12 - collage.photos.length);
+    const toAdd = files.slice(0, maxNew);
+    const photos = await createPhotos(toAdd);
+    if (photos.length > 0) addPhotos(photos);
+  };
+
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden flex items-center justify-center" style={{ backgroundColor: previewBg }}>
+    <div
+      ref={containerRef}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="w-full h-full relative overflow-hidden flex items-center justify-center"
+      style={{ backgroundColor: previewBg }}
+    >
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm border-4 border-dashed border-white/40 rounded-xl m-4">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 flex items-center justify-center">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div className="text-white text-lg font-medium">Відпустіть, щоб завантажити фото</div>
+          </div>
+        </div>
+      )}
       <div style={{ transform: `scale(${scale})`, transformOrigin: "center center" }}>
         <Stage ref={stageRef} width={FULL_W} height={FULL_H}>
           <Layer>
