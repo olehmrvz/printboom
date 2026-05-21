@@ -48,12 +48,25 @@ export async function POST(request: Request) {
 
   const pdfBuf = Buffer.from(await pdf.arrayBuffer());
 
+  // Build inline keyboard for Telegram
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: "🖨️ В друк", callback_data: `status:PRINTING:${order.id}` },
+        { text: "✅ Готове", callback_data: `status:DONE:${order.id}` },
+      ],
+      [{ text: "❌ Скасувати", callback_data: `status:CANCELLED:${order.id}` }],
+    ],
+  };
+
   // Send PDF
+  let tgMessageId: number | null = null;
   try {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
     tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
     tgForm.append("caption", caption);
+    tgForm.append("reply_markup", JSON.stringify(replyMarkup));
 
     const res = await fetch(
       `https://api.telegram.org/bot${token}/sendDocument`,
@@ -66,6 +79,7 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    tgMessageId = data.result?.message_id ?? null;
   } catch (err: any) {
     return Response.json(
       { success: false, error: `PDF: ${err.message || "Network error"}` },
@@ -73,8 +87,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Send order separator
+  // Send order separator with order ID reference
   try {
+    const sepText = `\n━━━━━━━━━━━━━━━━━━━━\n📦 ЗАМОВЛЕННЯ #${order.id}\n@${instagramNick}\n━━━━━━━━━━━━━━━━━━━━\n`;
     await fetch(
       `https://api.telegram.org/bot${token}/sendMessage`,
       {
@@ -82,8 +97,9 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: "\n━━━━━━━━━━━━━━━━━━━━\n📦 ЗАМОВЛЕННЯ НАДІСЛАНО\n━━━━━━━━━━━━━━━━━━━━\n",
+          text: sepText,
           parse_mode: "HTML",
+          reply_markup: replyMarkup,
         }),
       }
     );
