@@ -26,9 +26,7 @@ export default function EditorLayout() {
 
         {/* Header */}
         <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between shrink-0">
-          <span className="text-[13px] font-bold tracking-[0.25em] text-white/90 uppercase">
-            Printboom
-          </span>
+          <img src="/logo.png" alt="Printboom" className="h-5 md:h-6 w-auto object-contain" />
           {/* Desktop: undo/redo/reset in header */}
           <div className="hidden md:flex items-center gap-1">
             <IconButton onClick={undo} title="Undo">

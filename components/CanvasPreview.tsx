@@ -69,9 +69,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       const texts = stageRef.current.find("Text");
       texts.forEach((node: any) => {
         node.clearCache();
-        node.setAttr("text", node.text());
+        node.fontFamily(node.fontFamily());
       });
-      stageRef.current.draw();
+      stageRef.current.batchDraw();
     }
   }, [fontLoaded]);
 
@@ -277,7 +277,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                 const textBlockW = measureTextWidth(line, fs, ls, typography.fontFamily);
                 const textOffsetX = Math.max(0, (collageW - textBlockW) / 2);
                 return (
-                  <Group key={i} y={yy} x={textOffsetX}>
+                  <Group key={`typo-${i}-${fontLoaded}`} y={yy} x={textOffsetX}>
                     {!isFirst && (
                       <Text
                         text={line}
@@ -374,6 +374,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
             {/* BOTTOM STRIP */}
             {decorations.signatureEnabled && decorations.signature && (
               <Text
+                key={`sig-${fontLoaded}`}
                 text={decorations.signature.toUpperCase()}
                 x={PAD_X}
                 y={row1Y}
@@ -386,6 +387,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
             )}
             {decorations.dateEnabled && (
               <Text
+                key={`date-${fontLoaded}`}
                 text={decorations.date || dateStr}
                 x={rightColX}
                 y={row1Y}
@@ -401,12 +403,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
             )}
 
             {decorations.showBarcode && barcode && (
-              <Group x={PAD_X} y={row2Y}>
+              <Group key={`barcode-${fontLoaded}`} x={PAD_X} y={row2Y}>
                 <KonvaImage image={barcode} x={0} y={0} width={barcodeW} height={barcodeH} listening={false} />
               </Group>
             )}
             {decorations.taglineEnabled && decorations.tagline && (
               <Text
+                key={`tag-${fontLoaded}`}
                 text={processedTagline}
                 x={rightColX}
                 y={row2Y}
