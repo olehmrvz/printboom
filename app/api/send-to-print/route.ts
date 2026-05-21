@@ -49,24 +49,12 @@ export async function POST(request: Request) {
 
   const pdfBuf = Buffer.from(await pdf.arrayBuffer());
 
-  // Build inline keyboard for Telegram — attached to PDF only
-  const replyMarkup = {
-    inline_keyboard: [
-      [
-        { text: "🖨️ В друк", callback_data: `status:PRINTING` },
-        { text: "✅ Готове", callback_data: `status:DONE` },
-      ],
-      [{ text: "❌ Скасувати", callback_data: `status:CANCELLED` }],
-    ],
-  };
-
-  // Send PDF with inline keyboard
+  // Send PDF
   try {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
     tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
     tgForm.append("caption", caption);
-    tgForm.append("reply_markup", JSON.stringify(replyMarkup));
 
     const res = await fetch(
       `https://api.telegram.org/bot${token}/sendDocument`,
