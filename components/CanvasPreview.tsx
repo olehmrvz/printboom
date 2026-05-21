@@ -313,7 +313,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="w-full h-full relative overflow-hidden flex items-center justify-center"
+      className="w-full h-full relative overflow-hidden flex items-center justify-center select-none"
       style={{ backgroundColor: canvasBg }}
     >
       {showDropOverlay && (
@@ -328,7 +328,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
           </div>
         </div>
       )}
-      <div style={{ transform: `scale(${scale})`, transformOrigin: "center center" }}>
+      <div className="relative" style={{ transform: `scale(${scale})`, transformOrigin: "center center" }} onContextMenu={(e) => e.preventDefault()}>
+        <div className="absolute inset-0 z-10 bg-transparent pointer-events-none select-none" aria-hidden="true" />
         <Stage ref={stageRef} width={FULL_W} height={FULL_H}>
           <Layer>
             {/* LAYERED TYPOGRAPHY */}
