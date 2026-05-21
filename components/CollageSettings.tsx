@@ -1,14 +1,39 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useEditorStore } from "@/store/editorStore";
 import { createPhotos } from "@/utils/photoUtils";
-import { LAYOUT_PRESETS } from "@/types";
+import { LAYOUT_PRESETS, Photo } from "@/types";
 
 export default function CollageSettings() {
   const { collage, addPhotos, removePhoto, reorderPhotos, setCollage, setLayoutPreset } = useEditorStore();
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<number | null>(null);
+  const [activePhoto, setActivePhoto] = useState<Photo | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const onDrop = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,6 +46,29 @@ export default function CollageSettings() {
       e.target.value = "";
     },
     [addPhotos, collage.photos.length]
+  );
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const photo = collage.photos.find((p) => p.id === event.active.id);
+      if (photo) setActivePhoto(photo);
+    },
+    [collage.photos]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActivePhoto(null);
+      if (over && active.id !== over.id) {
+        const oldIndex = collage.photos.findIndex((p) => p.id === active.id);
+        const newIndex = collage.photos.findIndex((p) => p.id === over.id);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          reorderPhotos(oldIndex, newIndex);
+        }
+      }
+    },
+    [collage.photos, reorderPhotos]
   );
 
   return (
@@ -43,48 +91,32 @@ export default function CollageSettings() {
             <p className="text-[10px] text-neutral-600 font-medium">Перетягніть, щоб змінити порядок</p>
             <span className="text-[10px] text-neutral-600 font-mono">{collage.photos.length}/12</span>
           </div>
-          <div className="grid grid-cols-4 md:grid-cols-3 gap-2 md:gap-1.5">
-            {collage.photos.map((photo, idx) => (
-              <div
-                key={photo.id}
-                draggable
-                onDragStart={(e) => {
-                  setDragIdx(idx);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (dragIdx !== null && dragIdx !== idx) setDropTarget(idx);
-                }}
-                onDragLeave={() => setDropTarget(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragIdx !== null && dragIdx !== idx) reorderPhotos(dragIdx, idx);
-                  setDragIdx(null);
-                  setDropTarget(null);
-                }}
-                onDragEnd={() => {
-                  setDragIdx(null);
-                  setDropTarget(null);
-                }}
-                className={`relative group aspect-square rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 border border-transparent ${
-                  dragIdx === idx ? "opacity-30 scale-95" : ""
-                } ${dropTarget === idx ? "ring-2 ring-white/50 scale-105 z-10 border-white/20" : "hover:border-neutral-600/30 hover:shadow-lg"}`}
-              >
-                <img src={photo.src} alt={`${idx + 1}`} className="w-full h-full object-cover" draggable={false} />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removePhoto(photo.id);
-                  }}
-                  className="absolute top-1 right-1 w-7 h-7 md:w-5 md:h-5 bg-black/70 backdrop-blur-sm text-white text-sm md:text-[10px] rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center hover:bg-red-500/90 hover:scale-110"
-                >
-                  ×
-                </button>
-                <div className="absolute bottom-0 left-0 text-[10px] md:text-[9px] bg-black/60 backdrop-blur-sm text-white/80 px-2 py-1 md:px-1.5 md:py-0.5 rounded-tr-lg font-mono">{idx + 1}</div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={collage.photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-4 md:grid-cols-3 gap-2 md:gap-1.5">
+                {collage.photos.map((photo, idx) => (
+                  <SortablePhoto
+                    key={photo.id}
+                    photo={photo}
+                    idx={idx}
+                    onRemove={removePhoto}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+            <DragOverlay>
+              {activePhoto ? (
+                <div className="aspect-square rounded-xl overflow-hidden border-2 border-white/50 shadow-lg opacity-90">
+                  <img src={activePhoto.src} alt="" className="w-full h-full object-cover" />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </>
       )}
 
@@ -115,6 +147,56 @@ export default function CollageSettings() {
         onChange={() => setCollage({ allBw: !collage.allBw })}
         label="Все чорно-біле"
       />
+    </div>
+  );
+}
+
+function SortablePhoto({
+  photo,
+  idx,
+  onRemove,
+}: {
+  photo: Photo;
+  idx: number;
+  onRemove: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: photo.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`relative group aspect-square rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 border border-transparent ${
+        isDragging ? "opacity-30 scale-95" : ""
+      } hover:border-neutral-600/30 hover:shadow-lg`}
+    >
+      <img src={photo.src} alt={`${idx + 1}`} className="w-full h-full object-cover" draggable={false} />
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(photo.id);
+        }}
+        className="absolute top-1 right-1 w-7 h-7 md:w-5 md:h-5 bg-black/70 backdrop-blur-sm text-white text-sm md:text-[10px] rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center hover:bg-red-500/90 hover:scale-110"
+      >
+        ×
+      </button>
+      <div className="absolute bottom-0 left-0 text-[10px] md:text-[9px] bg-black/60 backdrop-blur-sm text-white/80 px-2 py-1 md:px-1.5 md:py-0.5 rounded-tr-lg font-mono">{idx + 1}</div>
     </div>
   );
 }

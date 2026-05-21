@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useEditorStore } from "@/store/editorStore";
 import TypographySettings from "./TypographySettings";
 import CollageSettings from "./CollageSettings";
 import DecorationsSettings from "./DecorationsSettings";
@@ -13,6 +14,8 @@ type MobileTab = "typography" | "photos" | "decorations";
 
 export default function EditorLayout() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("photos");
+  const canvasRef = useRef<{ openPrintModal: () => void }>(null);
+  const { undo, redo, reset } = useEditorStore();
 
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] bg-[#0a0a0c] text-white antialiased overflow-hidden">
@@ -22,10 +25,43 @@ export default function EditorLayout() {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         {/* Header */}
-        <div className="px-4 md:px-5 py-3 md:py-4 flex items-center shrink-0">
+        <div className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between shrink-0">
           <span className="text-[13px] font-bold tracking-[0.25em] text-white/90 uppercase">
             Printboom
           </span>
+          {/* Desktop: undo/redo/reset in header */}
+          <div className="hidden md:flex items-center gap-1">
+            <IconButton onClick={undo} title="Undo">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            </IconButton>
+            <IconButton onClick={redo} title="Redo">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+            </IconButton>
+            <IconButton onClick={reset} title="Reset all" danger>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </IconButton>
+          </div>
+        </div>
+
+        {/* Mobile Action Bar */}
+        <div className="md:hidden flex items-center justify-between px-4 py-2 shrink-0 border-b border-white/5">
+          <div className="flex items-center gap-1.5">
+            <MobileIconButton onClick={undo} title="Undo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            </MobileIconButton>
+            <MobileIconButton onClick={redo} title="Redo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+            </MobileIconButton>
+            <MobileIconButton onClick={reset} title="Reset all" danger>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </MobileIconButton>
+          </div>
+          <button
+            onClick={() => canvasRef.current?.openPrintModal()}
+            className="px-4 py-2 bg-purple-600 text-white text-[11px] font-semibold rounded-lg hover:bg-purple-500 transition-all uppercase tracking-wider shadow-lg active:scale-95"
+          >
+            На друк
+          </button>
         </div>
 
         {/* Mobile Tabs */}
@@ -57,7 +93,7 @@ export default function EditorLayout() {
 
       {/* Right preview */}
       <main className="flex-1 relative overflow-hidden order-1 md:order-2 h-[55%] md:h-auto">
-        <CanvasPreview />
+        <CanvasPreview ref={canvasRef} />
       </main>
 
       <Onboarding onTabChange={(tab) => setMobileTab(tab)} />
@@ -96,5 +132,57 @@ function SectionDivider() {
     <div className="relative h-px my-1">
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neutral-800 to-transparent" />
     </div>
+  );
+}
+
+function IconButton({
+  onClick,
+  title,
+  danger,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 ${
+        danger
+          ? "text-red-400/80 hover:text-red-300 hover:bg-red-500/15"
+          : "text-neutral-400 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MobileIconButton({
+  onClick,
+  title,
+  danger,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-9 h-9 flex items-center justify-center rounded-full bg-neutral-800/60 border border-neutral-700/30 transition-all active:scale-90 ${
+        danger
+          ? "text-red-400/80 hover:text-red-300 hover:bg-red-500/15"
+          : "text-neutral-300 hover:text-white hover:bg-white/10 hover:border-neutral-600/40"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
