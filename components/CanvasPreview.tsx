@@ -243,9 +243,10 @@ export default function CanvasPreview() {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    // Export full canvas (everything visible) at 2x for high-quality PDF (300 DPI)
+    // Export full canvas (everything visible) at 1x for PDF — keeps file size
+    // well under Telegram's 50 MB limit while still giving 208 DPI on 1440×2160
     stage.draw();
-    const pdfDataURL = stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
+    const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
 
     // Export full canvas at 1x for PNG preview sent to Telegram
     const fullDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });

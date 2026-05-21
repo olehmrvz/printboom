@@ -174,7 +174,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   setLayoutPreset: (preset) =>
     set((s) => {
-      const collage = { ...s.collage, layoutPreset: preset };
+      const collage = {
+        ...s.collage,
+        layoutPreset: preset,
+        photos: s.collage.photos.map((p) => ({ ...p, offsetX: 0, offsetY: 0 })),
+      };
       return { collage, ...push({ ...s, collage }) };
     }),
 
