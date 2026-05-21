@@ -13,13 +13,12 @@ export async function POST(request: Request) {
     return Response.json({ success: false, error: "Invalid form data" }, { status: 400 });
   }
 
-  const photo = fd.get("photo") as File | null;
   const pdf = fd.get("pdf") as File | null;
   const instagramNick = fd.get("instagramNick") as string | null;
 
-  if (!photo || !instagramNick) {
+  if (!pdf || !instagramNick) {
     return Response.json(
-      { success: false, error: "Missing photo or instagramNick" },
+      { success: false, error: "Missing PDF or instagramNick" },
       { status: 400 }
     );
   }
@@ -31,14 +30,14 @@ export async function POST(request: Request) {
   const caption = `@${instagramNick} | ${dd}.${mm}.${yyyy}`;
   const filenameBase = `printboom_${instagramNick}_${dd}.${mm}.${yyyy}`;
 
-  const photoBuf = Buffer.from(await photo.arrayBuffer());
+  const pdfBuf = Buffer.from(await pdf.arrayBuffer());
 
-  // Send PNG
+  // Send PDF
   try {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
-    tgForm.append("document", new Blob([photoBuf], { type: "image/png" }), `${filenameBase}.png`);
-    tgForm.append("caption", caption + " (PNG)");
+    tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
+    tgForm.append("caption", caption);
 
     const res = await fetch(
       `https://api.telegram.org/bot${token}/sendDocument`,
@@ -47,37 +46,15 @@ export async function POST(request: Request) {
     const data = await res.json();
     if (!data.ok) {
       return Response.json(
-        { success: false, error: `PNG: ${data.description || "Telegram API error"}` },
+        { success: false, error: `PDF: ${data.description || "Telegram API error"}` },
         { status: 502 }
       );
     }
   } catch (err: any) {
     return Response.json(
-      { success: false, error: `PNG: ${err.message || "Network error"}` },
+      { success: false, error: `PDF: ${err.message || "Network error"}` },
       { status: 502 }
     );
-  }
-
-  // Send PDF (if provided)
-  if (pdf) {
-    try {
-      const pdfBuf = Buffer.from(await pdf.arrayBuffer());
-      const tgForm = new FormData();
-      tgForm.append("chat_id", chatId);
-      tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
-      tgForm.append("caption", caption + " (PDF)");
-
-      const res = await fetch(
-        `https://api.telegram.org/bot${token}/sendDocument`,
-        { method: "POST", body: tgForm }
-      );
-      const data = await res.json();
-      if (!data.ok) {
-        console.error("PDF send failed:", data.description);
-      }
-    } catch (err: any) {
-      console.error("PDF send error:", err.message);
-    }
   }
 
   // Send order separator

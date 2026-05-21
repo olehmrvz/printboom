@@ -187,46 +187,6 @@ export default function CanvasPreview() {
   const barcodeW = Math.min(700, collageW * 0.58);
   const barcodeH = row2Height;
 
-  const handleExport = async () => {
-    const EXPORT_W = 3500;
-    const EXPORT_H = Math.round(FULL_H * (EXPORT_W / FULL_W));
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const originalW = stage.width();
-    const originalH = stage.height();
-    const originalScaleX = stage.scaleX();
-    const originalScaleY = stage.scaleY();
-
-    stage.width(EXPORT_W);
-    stage.height(EXPORT_H);
-    stage.scale({ x: EXPORT_W / FULL_W, y: EXPORT_H / FULL_H });
-    stage.draw();
-
-    const dataURL = stage.toDataURL({ pixelRatio: 3, mimeType: "image/png" });
-
-    stage.width(originalW);
-    stage.height(originalH);
-    stage.scale({ x: originalScaleX, y: originalScaleY });
-    stage.draw();
-
-    const link = document.createElement("a");
-    link.download = `printboom-${Date.now()}.png`;
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  function dataURLToBlob(dataURL: string): Blob {
-    const parts = dataURL.split(",");
-    const mime = parts[0].match(/:(.*?);/)![1];
-    const raw = atob(parts[1]);
-    const arr = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-    return new Blob([arr], { type: mime });
-  }
-
   const handleSendToPrint = async (nick: string) => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -243,20 +203,20 @@ export default function CanvasPreview() {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    // Export full canvas (everything visible) at 1x for PDF — keeps file size
-    // well under Telegram's 50 MB limit while still giving 208 DPI on 1440×2160
-    stage.draw();
     const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
 
-    // Export full canvas at 1x for PNG preview sent to Telegram
-    const fullDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
-
-    // Generate PDF with embedded high-res raster
     let pdfBytes: Uint8Array | null = null;
     try {
       pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
+      setPrintStatus("error");
+      setPrintError("Помилка генерації PDF");
+      stage.width(originalW);
+      stage.height(originalH);
+      stage.scale({ x: originalScaleX, y: originalScaleY });
+      stage.draw();
+      return;
     }
 
     stage.width(originalW);
@@ -264,14 +224,16 @@ export default function CanvasPreview() {
     stage.scale({ x: originalScaleX, y: originalScaleY });
     stage.draw();
 
+    if (!pdfBytes) {
+      setPrintStatus("error");
+      setPrintError("PDF не згенеровано");
+      return;
+    }
+
     try {
-      const pngBlob = dataURLToBlob(fullDataURL);
       const formData = new FormData();
-      formData.append("photo", pngBlob, "printboom.png");
       formData.append("instagramNick", nick);
-      if (pdfBytes) {
-        formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
-      }
+      formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
 
       const res = await fetch("/api/send-to-print", { method: "POST", body: formData });
       const json = await res.json();
@@ -279,7 +241,7 @@ export default function CanvasPreview() {
         setPrintStatus("success");
       } else {
         setPrintStatus("error");
-        setPrintError(json.error || "Невідома помилка");
+        setPrintError(json.error || "Невідома помилка відправки");
       }
     } catch (err: any) {
       setPrintStatus("error");
@@ -455,22 +417,6 @@ export default function CanvasPreview() {
         <div className="absolute top-4 left-4 text-xs text-gray-400 animate-pulse">Завантаження...</div>
       )}
 
-      {/* Export & send to print — top right */}
-      <div data-onboarding="export" className="absolute top-3 right-3 md:top-4 md:right-4 flex flex-col gap-1.5 z-10">
-        <button
-          onClick={handleExport}
-          className="px-3 py-2 md:px-4 md:py-2.5 bg-sky-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-sky-500 transition-all uppercase tracking-wider shadow-lg shadow-sky-900/30 hover:shadow-sky-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
-        >
-          PNG
-        </button>
-        <button
-          onClick={() => { setShowPrintModal(true); setPrintStatus("idle"); }}
-          className="px-3 py-2 md:px-4 md:py-2.5 bg-purple-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-purple-500 transition-all uppercase tracking-wider shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
-        >
-          На друк
-        </button>
-      </div>
-
       {showPrintModal && (
         <PrintModal
           onClose={() => setShowPrintModal(false)}
@@ -480,29 +426,38 @@ export default function CanvasPreview() {
         />
       )}
 
-      {/* Undo / Redo / Reset — bottom center */}
-      <div data-onboarding="undo" className="absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-5 flex items-center gap-2 md:gap-1.5 bg-black/50 backdrop-blur-md rounded-full px-3 py-2 md:px-2 md:py-1.5 z-20 border border-white/10 shadow-xl">
+      {/* Actions — bottom right */}
+      <div className="absolute bottom-3 right-3 md:bottom-5 md:right-5 flex flex-col gap-2 z-20">
+        <div data-onboarding="undo" className="flex items-center gap-2 md:gap-1.5 bg-black/50 backdrop-blur-md rounded-full px-3 py-2 md:px-2 md:py-1.5 border border-white/10 shadow-xl">
+          <button
+            onClick={undo}
+            className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-neutral-300 hover:text-white hover:bg-white/10 transition-all text-sm active:scale-90"
+            title="Undo"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+          </button>
+          <button
+            onClick={redo}
+            className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-neutral-300 hover:text-white hover:bg-white/10 transition-all text-sm active:scale-90"
+            title="Redo"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+          </button>
+          <div className="w-px h-5 md:h-4 bg-white/15 mx-0.5" />
+          <button
+            onClick={reset}
+            className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-red-400/80 hover:text-red-300 hover:bg-red-500/15 transition-all text-sm active:scale-90"
+            title="Reset all"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          </button>
+        </div>
         <button
-          onClick={undo}
-          className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-neutral-300 hover:text-white hover:bg-white/10 transition-all text-sm active:scale-90"
-          title="Undo"
+          data-onboarding="export"
+          onClick={() => { setShowPrintModal(true); setPrintStatus("idle"); }}
+          className="px-3 py-2 md:px-4 md:py-2.5 bg-purple-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-purple-500 transition-all uppercase tracking-wider shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-        </button>
-        <button
-          onClick={redo}
-          className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-neutral-300 hover:text-white hover:bg-white/10 transition-all text-sm active:scale-90"
-          title="Redo"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
-        </button>
-        <div className="w-px h-5 md:h-4 bg-white/15 mx-0.5" />
-        <button
-          onClick={reset}
-          className="w-10 h-10 md:w-9 md:h-9 flex items-center justify-center rounded-full text-red-400/80 hover:text-red-300 hover:bg-red-500/15 transition-all text-sm active:scale-90"
-          title="Reset all"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          На друк
         </button>
       </div>
     </div>
