@@ -80,5 +80,23 @@ export async function POST(request: Request) {
     }
   }
 
+  // Send order separator
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: "\n━━━━━━━━━━━━━━━━━━━━\n📦 ЗАМОВЛЕННЯ НАДІСЛАНО\n━━━━━━━━━━━━━━━━━━━━\n",
+          parse_mode: "HTML",
+        }),
+      }
+    );
+  } catch (err: any) {
+    console.error("Separator send error:", err.message);
+  }
+
   return Response.json({ success: true });
 }

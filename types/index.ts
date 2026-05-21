@@ -142,14 +142,14 @@ export const DEFAULT_COLLAGE: CollageConfig = {
 };
 
 export const DEFAULT_DECORATIONS: DecorationsConfig = {
-  signature: "",
-  signatureEnabled: false,
+  signature: "Ваше iм'я",
+  signatureEnabled: true,
   date: "",
   dateAuto: false,
   dateEnabled: true,
   showBarcode: true,
-  tagline: "",
-  taglineEnabled: false,
+  tagline: "Ваш слоган",
+  taglineEnabled: true,
   bottomTextColor: "#000000",
   barcodeColor: "#000000",
   bottomFontSize: 110,

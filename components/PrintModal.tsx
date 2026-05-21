@@ -12,10 +12,17 @@ interface PrintModalProps {
 export default function PrintModal({ onClose, onSubmit, status, errorMsg }: PrintModalProps) {
   const [nick, setNick] = useState("");
 
+  const isValidNick = /^[a-zA-Z0-9_.]+$/.test(nick.trim().replace(/^@/, ""));
+
   const handleSubmit = () => {
     const trimmed = nick.trim().replace(/^@/, "");
-    if (!trimmed) return;
+    if (!trimmed || !isValidNick) return;
     onSubmit(trimmed);
+  };
+
+  const handleChange = (value: string) => {
+    const cleaned = value.replace(/[^a-zA-Z0-9_.]/g, "");
+    setNick(cleaned);
   };
 
   if (status === "success") {
@@ -77,12 +84,26 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
             <input
               type="text"
               value={nick}
-              onChange={(e) => setNick(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               placeholder="koxayou_print"
               autoFocus
               className="flex-1 bg-transparent text-white text-sm px-2 py-3.5 outline-none placeholder:text-neutral-600"
             />
+          </div>
+          <div className="mt-2.5 space-y-1.5">
+            <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+              <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              <span>Лише латиниця (a-z, 0-9)</span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+              <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              <span>Перевірте написання з Instagram</span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+              <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              <span>За цим ніком ми знайдемо замовлення</span>
+            </div>
           </div>
         </div>
 
@@ -96,7 +117,7 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
           </button>
           <button
             onClick={handleSubmit}
-            disabled={status === "sending" || !nick.trim().replace(/^@/, "")}
+            disabled={status === "sending" || !nick.trim().replace(/^@/, "") || !isValidNick}
             className="flex-1 py-3 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-500 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {status === "sending" ? (

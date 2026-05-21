@@ -54,6 +54,12 @@ export default function CanvasPreview() {
   }, []);
 
   useEffect(() => {
+    if (fontLoaded && stageRef.current) {
+      stageRef.current.draw();
+    }
+  }, [fontLoaded]);
+
+  useEffect(() => {
     let loaded = 0;
     const total = collage.photos.length;
     if (total === 0) {
