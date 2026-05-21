@@ -55,9 +55,15 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printStatus, setPrintStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [printError, setPrintError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useImperativeHandle(ref, () => ({
     openPrintModal: () => {
+      const stage = stageRef.current;
+      if (stage) {
+        const url = stage.toDataURL({ pixelRatio: 0.25, mimeType: "image/png" });
+        setPreviewUrl(url);
+      }
       setShowPrintModal(true);
       setPrintStatus("idle");
     },
@@ -426,56 +432,60 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
             </Group>
 
             {/* BOTTOM STRIP */}
-            {decorations.signatureEnabled && decorations.signature && (
-              <Text
-                key={`sig-${fontLoaded}`}
-                text={decorations.signature.toUpperCase()}
-                x={PAD_X}
-                y={row1Y}
-                fontSize={sigFont}
-                fontFamily={typography.fontFamily}
-                fill={decorations.bottomTextColor}
-                fontStyle="bold"
-                listening={false}
-              />
-            )}
-            {decorations.dateEnabled && (
-              <Text
-                key={`date-${fontLoaded}`}
-                text={decorations.date || dateStr}
-                x={rightColX}
-                y={row1Y}
-                fontSize={dateFont}
-                fontFamily={typography.fontFamily}
-                fill={decorations.bottomTextColor}
-                width={rightColW}
-                align="right"
-                wrap="none"
-                fontStyle="bold"
-                listening={false}
-              />
-            )}
+            {!decorations.noText && (
+              <>
+                {decorations.signatureEnabled && decorations.signature && (
+                  <Text
+                    key={`sig-${fontLoaded}`}
+                    text={decorations.signature.toUpperCase()}
+                    x={PAD_X}
+                    y={row1Y}
+                    fontSize={sigFont}
+                    fontFamily={typography.fontFamily}
+                    fill={decorations.bottomTextColor}
+                    fontStyle="bold"
+                    listening={false}
+                  />
+                )}
+                {decorations.dateEnabled && (
+                  <Text
+                    key={`date-${fontLoaded}`}
+                    text={decorations.date || dateStr}
+                    x={rightColX}
+                    y={row1Y}
+                    fontSize={dateFont}
+                    fontFamily={typography.fontFamily}
+                    fill={decorations.bottomTextColor}
+                    width={rightColW}
+                    align="right"
+                    wrap="none"
+                    fontStyle="bold"
+                    listening={false}
+                  />
+                )}
 
-            {decorations.showBarcode && barcode && (
-              <Group key={`barcode-${fontLoaded}`} x={PAD_X} y={row2Y}>
-                <KonvaImage image={barcode} x={0} y={0} width={barcodeW} height={barcodeH} listening={false} />
-              </Group>
-            )}
-            {decorations.taglineEnabled && decorations.tagline && (
-              <Text
-                key={`tag-${fontLoaded}`}
-                text={processedTagline}
-                x={rightColX}
-                y={row2Y}
-                fontSize={tagFont}
-                fontFamily={typography.fontFamily}
-                fill={decorations.bottomTextColor}
-                width={rightColW}
-                align="right"
-                wrap="none"
-                fontStyle="bold"
-                listening={false}
-              />
+                {decorations.showBarcode && barcode && (
+                  <Group key={`barcode-${fontLoaded}`} x={PAD_X} y={row2Y}>
+                    <KonvaImage image={barcode} x={0} y={0} width={barcodeW} height={barcodeH} listening={false} />
+                  </Group>
+                )}
+                {decorations.taglineEnabled && decorations.tagline && (
+                  <Text
+                    key={`tag-${fontLoaded}`}
+                    text={processedTagline}
+                    x={rightColX}
+                    y={row2Y}
+                    fontSize={tagFont}
+                    fontFamily={typography.fontFamily}
+                    fill={decorations.bottomTextColor}
+                    width={rightColW}
+                    align="right"
+                    wrap="none"
+                    fontStyle="bold"
+                    listening={false}
+                  />
+                )}
+              </>
             )}
           </Layer>
         </Stage>
@@ -491,6 +501,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
           onSubmit={handleSendToPrint}
           status={printStatus}
           errorMsg={printError}
+          previewUrl={previewUrl}
         />
       )}
 
@@ -521,13 +532,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
             </button>
           </div>
-          <button
-            data-onboarding="export"
-            onClick={() => { setShowPrintModal(true); setPrintStatus("idle"); }}
-            className="px-3 py-2 md:px-4 md:py-2.5 bg-purple-600 text-white text-[10px] md:text-[11px] font-semibold rounded-lg hover:bg-purple-500 transition-all uppercase tracking-wider shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 active:scale-95 md:hover:-translate-y-0.5 whitespace-nowrap"
-          >
-            На друк
-          </button>
         </div>
       </div>
     </div>

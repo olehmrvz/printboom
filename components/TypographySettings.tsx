@@ -46,7 +46,7 @@ function applyPreset(
   });
 }
 
-export default function TypographySettings() {
+export default function TypographySettings({ hideHeader = false }: { hideHeader?: boolean }) {
   const { typography, setTypography, setTextTemplate, setDecorations } = useEditorStore();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -55,7 +55,7 @@ export default function TypographySettings() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Типографія" icon="T" />
+      {!hideHeader && <SectionHeader title="Типографія" icon="T" />}
 
       {/* Primary templates — 2×2 grid */}
       <div data-onboarding="templates" className="grid grid-cols-2 gap-2 md:gap-1.5">

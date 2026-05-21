@@ -70,6 +70,7 @@ export interface DecorationsConfig {
   bottomTextColor: string;
   barcodeColor: string;
   bottomFontSize: number;
+  noText: boolean;
 }
 
 export interface CanvasConfig {
@@ -119,7 +120,7 @@ export const LAYOUT_PRESETS: { value: LayoutPreset; label: string }[] = [
 ];
 
 export const DEFAULT_TYPOGRAPHY: TypographyConfig = {
-  text: "KOXAYOU",
+  text: "ОБЕРИ НАПИС",
   template: "CUSTOM",
   style: "both",
   fontSize: 120,
@@ -153,6 +154,7 @@ export const DEFAULT_DECORATIONS: DecorationsConfig = {
   bottomTextColor: "#000000",
   barcodeColor: "#000000",
   bottomFontSize: 110,
+  noText: false,
 };
 
 export const DEFAULT_CANVAS: CanvasConfig = {

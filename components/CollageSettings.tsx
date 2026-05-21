@@ -24,8 +24,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEditorStore } from "@/store/editorStore";
 import { createPhotos } from "@/utils/photoUtils";
 import { LAYOUT_PRESETS, Photo } from "@/types";
+import LayoutPresetIcon from "./LayoutPresetIcon";
 
-export default function CollageSettings() {
+export default function CollageSettings({ hideHeader = false }: { hideHeader?: boolean }) {
   const { collage, addPhotos, removePhoto, reorderPhotos, setCollage, setLayoutPreset } = useEditorStore();
   const [activePhoto, setActivePhoto] = useState<Photo | null>(null);
 
@@ -73,7 +74,7 @@ export default function CollageSettings() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Фото" icon="P" />
+      {!hideHeader && <SectionHeader title="Фото" icon="P" />}
 
       <label data-onboarding="photos" className="group flex items-center justify-center w-full h-24 md:h-20 border-2 border-dashed border-neutral-700/40 rounded-2xl cursor-pointer hover:border-neutral-500/60 transition-all duration-300 bg-neutral-800/20 hover:bg-neutral-800/40 active:bg-neutral-800/60">
         <div className="text-center">
@@ -130,13 +131,17 @@ export default function CollageSettings() {
             <button
               key={lp.value}
               onClick={() => setLayoutPreset(lp.value)}
-              className={`group text-[12px] md:text-[10px] px-4 py-3.5 md:px-3 md:py-2.5 rounded-xl text-left transition-all duration-200 border active:scale-[0.98] ${
+              className={`group flex flex-col items-center gap-2 px-3 py-3 md:px-2.5 md:py-2.5 rounded-xl text-center transition-all duration-200 border active:scale-[0.98] ${
                 collage.layoutPreset === lp.value
                   ? "bg-white text-black font-semibold border-white shadow-lg shadow-white/10 scale-[1.02]"
                   : "bg-neutral-800/40 text-neutral-400 border-neutral-700/30 hover:bg-neutral-800/70 hover:text-neutral-200 hover:border-neutral-600/40 hover:scale-[1.02]"
               }`}
             >
-              {lp.label}
+              <LayoutPresetIcon
+                preset={lp.value}
+                className={collage.layoutPreset === lp.value ? "text-black" : "text-neutral-400 group-hover:text-neutral-200"}
+              />
+              <span className="text-[11px] md:text-[10px]">{lp.label}</span>
             </button>
           ))}
         </div>

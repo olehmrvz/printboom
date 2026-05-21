@@ -1,30 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
 import { useEditorStore } from "@/store/editorStore";
-import { formatDate } from "@/utils/exportUtils";
 
-export default function DecorationsSettings() {
+export default function DecorationsSettings({ hideHeader = false }: { hideHeader?: boolean }) {
   const { decorations, setDecorations } = useEditorStore();
-
-  useEffect(() => {
-    if (decorations.dateEnabled && !decorations.date) {
-      setDecorations({ date: formatDate() });
-    }
-  }, []);
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Декорації" icon="D" />
+      {!hideHeader && <SectionHeader title="Декорації" icon="D" />}
 
       <div data-onboarding="decorations" className="space-y-4">
-        {/* Signature */}
-        <div className="space-y-2">
-          <Toggle
-            checked={decorations.signatureEnabled}
-            onChange={() => setDecorations({ signatureEnabled: !decorations.signatureEnabled })}
-              label="Підпис"
-          />
+        {/* No text option */}
+        <Toggle
+          checked={decorations.noText}
+          onChange={() => setDecorations({ noText: !decorations.noText })}
+          label="Хочу без тексту"
+        />
+
+        {!decorations.noText && (
+          <>
+            {/* Signature */}
+            <div className="space-y-2">
+              <Toggle
+                checked={decorations.signatureEnabled}
+                onChange={() => setDecorations({ signatureEnabled: !decorations.signatureEnabled })}
+                  label="Підпис"
+              />
           {decorations.signatureEnabled && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
               <input
@@ -84,43 +85,45 @@ export default function DecorationsSettings() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Bottom font size */}
-      <div className="space-y-3 md:space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-            Розмір шрифту знизу
-          </label>
-          <span className="text-[11px] md:text-[10px] text-neutral-400 font-mono">{decorations.bottomFontSize}px</span>
-        </div>
-        <StyledRange
-          min={110}
-          max={164}
-          value={decorations.bottomFontSize}
-          onChange={(v) => setDecorations({ bottomFontSize: v })}
-        />
-      </div>
+          {/* Bottom font size */}
+          <div className="space-y-3 md:space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
+                Розмір шрифту знизу
+              </label>
+              <span className="text-[11px] md:text-[10px] text-neutral-400 font-mono">{decorations.bottomFontSize}px</span>
+            </div>
+            <StyledRange
+              min={110}
+              max={164}
+              value={decorations.bottomFontSize}
+              onChange={(v) => setDecorations({ bottomFontSize: v })}
+            />
+          </div>
 
-      {/* Bottom & Barcode Color */}
-      <div className="space-y-3 md:space-y-2">
-        <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-          Колір низу та штрихкоду
-        </label>
-        <div className="relative">
-          <input
-            type="color"
-            value={decorations.bottomTextColor}
-            onChange={(e) =>
-              setDecorations({ bottomTextColor: e.target.value, barcodeColor: e.target.value })
-            }
-            className="w-full h-9 rounded-xl cursor-pointer bg-neutral-800/50 border border-neutral-700/40 p-1 appearance-none overflow-hidden"
-          />
-          <div
-            className="absolute inset-1.5 rounded-lg pointer-events-none border border-white/5"
-            style={{ backgroundColor: decorations.bottomTextColor }}
-          />
-        </div>
+          {/* Bottom & Barcode Color */}
+          <div className="space-y-3 md:space-y-2">
+            <label className="text-[11px] md:text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
+              Колір низу та штрихкоду
+            </label>
+            <div className="relative">
+              <input
+                type="color"
+                value={decorations.bottomTextColor}
+                onChange={(e) =>
+                  setDecorations({ bottomTextColor: e.target.value, barcodeColor: e.target.value })
+                }
+                className="w-full h-9 rounded-xl cursor-pointer bg-neutral-800/50 border border-neutral-700/40 p-1 appearance-none overflow-hidden"
+              />
+              <div
+                className="absolute inset-1.5 rounded-lg pointer-events-none border border-white/5"
+                style={{ backgroundColor: decorations.bottomTextColor }}
+              />
+            </div>
+          </div>
+          </>
+        )}
       </div>
     </div>
   );
