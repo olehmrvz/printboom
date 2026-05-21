@@ -45,8 +45,8 @@ const STEPS: Step[] = [
   },
   {
     selector: '[data-onboarding="export"]',
-    title: "Збережіть результат",
-    description: "Експортуйте в PNG з високою роздільною здатністю для друку.",
+    title: "Відправте на друк",
+    description: "Натисніть 'На друк' і введіть свій Instagram нік. Ми отримаємо PDF і зробимо друк.",
   },
   {
     selector: '[data-onboarding="undo"]',
