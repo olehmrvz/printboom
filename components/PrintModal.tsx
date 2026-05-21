@@ -27,8 +27,8 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
 
   if (status === "success") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-6 w-[320px] text-center space-y-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 px-4">
+        <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 md:p-6 w-full max-w-[320px] text-center space-y-4">
           <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
@@ -49,8 +49,8 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
 
   if (status === "error") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-6 w-[320px] text-center space-y-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 px-4">
+        <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 md:p-6 w-full max-w-[320px] text-center space-y-4">
           <div className="w-14 h-14 mx-auto rounded-full bg-red-500/20 flex items-center justify-center">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -71,8 +71,8 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-6 w-[320px] space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 px-4">
+      <div className="bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 md:p-6 w-full max-w-[320px] space-y-5">
         <h2 className="text-lg font-semibold text-white">Надіслати на друк</h2>
 
         <div>
@@ -88,7 +88,7 @@ export default function PrintModal({ onClose, onSubmit, status, errorMsg }: Prin
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               placeholder="koxayou_print"
               autoFocus
-              className="flex-1 bg-transparent text-white text-sm px-2 py-3.5 outline-none placeholder:text-neutral-600"
+              className="flex-1 bg-transparent text-white text-base md:text-sm px-2 py-3.5 outline-none placeholder:text-neutral-600"
             />
           </div>
           <div className="mt-2.5 space-y-1.5">
