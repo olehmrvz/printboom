@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
+import { upload } from "@vercel/blob/client";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
 import { generateCollageGrid } from "@/utils/collageGenerator";
@@ -243,21 +244,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
 
     let pdfBytes: Uint8Array | null = null;
     try {
-      // Use PNG because JPEG has no alpha channel and adds a solid background.
-      // Vercel has a request body limit, so lower resolution until the PDF is small enough.
-      const maxUploadBytes = 3.5 * 1024 * 1024;
-      const pixelRatios = [0.25, 0.2, 0.15, 0.1];
-
-      for (const pixelRatio of pixelRatios) {
-        const pdfDataURL = stage.toDataURL({ pixelRatio, mimeType: "image/png" });
-        const candidate = await generatePrintPDF(typography.color, pdfDataURL);
-        pdfBytes = candidate;
-        if (candidate.byteLength <= maxUploadBytes) break;
-      }
-
-      if (pdfBytes && pdfBytes.byteLength > maxUploadBytes) {
-        throw new Error("PDF is too large for upload");
-      }
+      // Full-size PNG keeps transparency and print quality (3000x4500).
+      // The generated PDF is uploaded directly to Vercel Blob, not through our API body.
+      const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
       setPrintStatus("error");
@@ -281,15 +271,21 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("instagramNick", nick);
-      formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
+      const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+      const safeNick = nick.trim().replace(/^@/, "").replace(/[^a-zA-Z0-9_.-]/g, "_");
+      const uploaded = await upload(`printboom/${safeNick || "order"}-${Date.now()}.pdf`, pdfBlob, {
+        access: "public",
+        handleUploadUrl: "/api/blob-upload",
+        contentType: "application/pdf",
+        multipart: true,
+      });
 
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 45000);
       const res = await fetch("/api/send-to-print", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instagramNick: nick, pdfUrl: uploaded.url }),
         signal: controller.signal,
       });
       window.clearTimeout(timeoutId);

@@ -26,19 +26,28 @@ export async function POST(request: Request) {
     );
   }
 
-  let fd: FormData;
+  let pdf: File | null = null;
+  let pdfUrl: string | null = null;
+  let instagramNick: string | null = null;
+
   try {
-    fd = await request.formData();
+    const contentType = request.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+      pdfUrl = typeof body.pdfUrl === "string" ? body.pdfUrl : null;
+      instagramNick = typeof body.instagramNick === "string" ? body.instagramNick : null;
+    } else {
+      const fd = await request.formData();
+      pdf = fd.get("pdf") as File | null;
+      instagramNick = fd.get("instagramNick") as string | null;
+    }
   } catch {
-    return Response.json({ success: false, error: "Invalid form data" }, { status: 400 });
+    return Response.json({ success: false, error: "Invalid request data" }, { status: 400 });
   }
 
-  const pdf = fd.get("pdf") as File | null;
-  const instagramNick = fd.get("instagramNick") as string | null;
-
-  if (!pdf || !instagramNick) {
+  if ((!pdf && !pdfUrl) || !instagramNick) {
     return Response.json(
-      { success: false, error: "Missing PDF or instagramNick" },
+      { success: false, error: "Missing PDF/PDF URL or instagramNick" },
       { status: 400 }
     );
   }
@@ -69,13 +78,16 @@ export async function POST(request: Request) {
   const safeNick = normalizedNick.replace(/[^a-zA-Z0-9_.-]/g, "_");
   const filenameBase = `printboom_${safeNick}_${dateStr}`;
 
-  const pdfBuf = Buffer.from(await pdf.arrayBuffer());
-
   // Send PDF
   try {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
-    tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
+    if (pdfUrl) {
+      tgForm.append("document", pdfUrl);
+    } else if (pdf) {
+      const pdfBuf = Buffer.from(await pdf.arrayBuffer());
+      tgForm.append("document", new Blob([pdfBuf], { type: "application/pdf" }), `${filenameBase}.pdf`);
+    }
     tgForm.append("caption", caption);
 
     const res = await fetch(
