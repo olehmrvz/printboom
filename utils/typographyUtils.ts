@@ -53,8 +53,9 @@ export function calcAutoFitFontSize(
     const naturalWidth = ctx.measureText(line).width;
     const gap = target - naturalWidth;
     if (gap > 0) {
-      // Letter spacing is visually applied between characters, so use gaps count.
-      letterSpacing = gap / Math.max(1, line.length - 1);
+      // Konva applies letterSpacing after each character, so divide by character count
+      // to avoid clipping the last character inside a fixed-width centered Text block.
+      letterSpacing = gap / line.length;
     }
   }
 
@@ -71,5 +72,6 @@ export function measureTextWidth(
   const ctx = canvas.getContext("2d")!;
   ctx.font = `bold ${fontSize}px ${fontFamily}`;
   const metrics = ctx.measureText(text);
-  return metrics.width + letterSpacing * Math.max(0, text.length - 1);
+  // Konva adds letterSpacing after each character.
+  return metrics.width + letterSpacing * text.length;
 }
