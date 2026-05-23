@@ -17,46 +17,6 @@ const STEPS: Step[] = [
     title: "Враховуйте колір виробу",
     description: "Не забувайте про колір виробу, на який будете наносити принт. Наприклад, якщо футболка біла — принт має бути темним, щоб його було видно. І навпаки: на темному одязі обирайте світлі кольори для друку.",
   },
-  {
-    selector: '[data-onboarding="templates"]',
-    title: "Виберіть текст",
-    description: "Оберіть готовий шаблон або введіть свій текст.",
-    tab: "typography",
-  },
-  {
-    selector: '[data-onboarding="colors"]',
-    title: "Налаштуйте кольори",
-    description: "Виберіть колірний пресет або задайте власні кольори.",
-    tab: "typography",
-  },
-  {
-    selector: '[data-onboarding="photos"]',
-    title: "Завантажте фото",
-    description: "Натисніть сюди або перетягніть 6–12 фотографій для колажу.",
-    tab: "photos",
-  },
-  {
-    selector: '[data-onboarding="layout"]',
-    title: "Розкладка колажу",
-    description: "Виберіть сітку для розташування фотографій.",
-    tab: "photos",
-  },
-  {
-    selector: '[data-onboarding="decorations"]',
-    title: "Додайте декорації",
-    description: "Підпис, дата, штрихкод і слоган унизу колажу.",
-    tab: "decorations",
-  },
-  {
-    selector: '[data-onboarding="export"]',
-    title: "Відправте на друк",
-    description: "Натисніть 'На друк' і введіть свій Instagram. Ми зробимо PDF і надрукуємо.",
-  },
-  {
-    selector: '[data-onboarding="undo"]',
-    title: "Скасування дій",
-    description: "Використовуйте Undo / Redo або скиньте все кнопкою Reset.",
-  },
 ];
 
 export default function Onboarding({

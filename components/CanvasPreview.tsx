@@ -51,7 +51,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
-  const [scale, setScale] = useState(0.25);
+  const [scale, setScale] = useState(0);
+  const [canvasReady, setCanvasReady] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printStatus, setPrintStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [printError, setPrintError] = useState("");
@@ -120,11 +121,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     if (!el) return;
     function update() {
       if (!el) return;
-      const mw = el.clientWidth - 40;
-      const mh = el.clientHeight - 40;
+      const mw = Math.max(0, el.clientWidth - 40);
+      const mh = Math.max(0, el.clientHeight - 40);
+      if (mw <= 0 || mh <= 0) return;
       const sx = mw / FULL_W;
       const sy = mh / FULL_H;
       setScale(Math.min(sx, sy, 0.95));
+      setCanvasReady(true);
     }
     update();
     const ro = new ResizeObserver(update);
@@ -328,7 +331,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
           </div>
         </div>
       )}
-      <div className="relative" style={{ transform: `scale(${scale})`, transformOrigin: "center center" }} onContextMenu={(e) => e.preventDefault()}>
+      <div className="relative" style={{ transform: `scale(${scale})`, transformOrigin: "center center", opacity: canvasReady ? 1 : 0, transition: "opacity 0.15s ease" }} onContextMenu={(e) => e.preventDefault()}>
         <div className="absolute inset-0 z-10 bg-transparent pointer-events-none select-none" aria-hidden="true" />
         <Stage ref={stageRef} width={FULL_W} height={FULL_H}>
           <Layer>

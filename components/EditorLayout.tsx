@@ -44,7 +44,7 @@ export default function EditorLayout() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-[#0a0a0c] text-white antialiased overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen h-[100dvh] bg-[#0a0a0c] text-white antialiased overflow-hidden">
       {/* Left panel / Mobile bottom sheet */}
       <aside className="w-full md:w-[320px] md:min-w-[320px] bg-[#111114] flex flex-col overflow-hidden shadow-2xl shadow-black/40 relative z-10 order-2 md:order-1 h-[45%] md:h-auto">
         {/* Subtle top gradient line */}
