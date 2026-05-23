@@ -6,13 +6,17 @@ import { useEditorStore } from "@/store/editorStore";
 export type OnboardingTab = "typography" | "photos" | "decorations";
 
 interface Step {
-  selector: string;
+  selector?: string;
   title: string;
   description: string;
   tab?: OnboardingTab;
 }
 
 const STEPS: Step[] = [
+  {
+    title: "Враховуйте колір виробу",
+    description: "Не забувайте про колір виробу, на який будете наносити принт. Наприклад, якщо футболка біла — принт має бути темним, щоб його було видно. І навпаки: на темному одязі обирайте світлі кольори для друку.",
+  },
   {
     selector: '[data-onboarding="templates"]',
     title: "Виберіть текст",
@@ -88,8 +92,14 @@ export default function Onboarding({
       if (onStepChange) onStepChange(STEP_TAB_TO_DESKTOP_STEP[step.tab]);
     }
 
+    if (!step.selector) {
+      setRect(null);
+      return;
+    }
+
+    const sel = step.selector;
     requestAnimationFrame(() => {
-      const el = document.querySelector(step.selector);
+      const el = document.querySelector(sel);
       if (el) {
         setRect(el.getBoundingClientRect());
       } else {
@@ -138,17 +148,24 @@ export default function Onboarding({
   const holeRight = rect ? rect.left + rect.width + padding : 0;
   const holeBottom = rect ? rect.top + rect.height + padding : 0;
 
-  const tooltipWidth = 280;
-  let tooltipLeft = rect ? rect.left + rect.width / 2 - tooltipWidth / 2 : 16;
-  let tooltipTop = rect ? holeBottom + 16 : 100;
-  let tooltipArrow: "top" | "bottom" | null = "top";
+  const tooltipWidth = 300;
+  let tooltipLeft: number;
+  let tooltipTop: number;
+  let tooltipArrow: "top" | "bottom" | null;
 
-  if (typeof window !== "undefined") {
+  if (!rect) {
+    tooltipLeft = typeof window !== "undefined" ? (window.innerWidth - tooltipWidth) / 2 : 16;
+    tooltipTop = 120;
+    tooltipArrow = null;
+  } else {
+    tooltipLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+    tooltipTop = holeBottom + 16;
+    tooltipArrow = "top";
     if (tooltipLeft < 16) tooltipLeft = 16;
     if (tooltipLeft + tooltipWidth > window.innerWidth - 16) {
       tooltipLeft = window.innerWidth - tooltipWidth - 16;
     }
-    if (tooltipTop + 220 > window.innerHeight && rect) {
+    if (tooltipTop + 220 > window.innerHeight) {
       tooltipTop = holeTop - 200;
       tooltipArrow = "bottom";
     }
@@ -204,7 +221,7 @@ export default function Onboarding({
       )}
 
       <div
-        className="fixed z-50 w-[280px] bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 pointer-events-auto"
+        className="fixed z-50 w-[300px] bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 pointer-events-auto"
         style={{ left: tooltipLeft, top: tooltipTop }}
       >
         <div className="flex items-center justify-between mb-2">
