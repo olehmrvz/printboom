@@ -273,12 +273,20 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     try {
       const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
       const safeNick = nick.trim().replace(/^@/, "").replace(/[^a-zA-Z0-9_.-]/g, "_");
-      const uploaded = await upload(`printboom/${safeNick || "order"}-${Date.now()}.pdf`, pdfBlob, {
-        access: "public",
-        handleUploadUrl: "/api/blob-upload",
-        contentType: "application/pdf",
-        multipart: true,
-      });
+      const uploadController = new AbortController();
+      const uploadTimeoutId = window.setTimeout(() => uploadController.abort(), 120000);
+      let uploaded: Awaited<ReturnType<typeof upload>>;
+      try {
+        uploaded = await upload(`printboom/${safeNick || "order"}-${Date.now()}.pdf`, pdfBlob, {
+          access: "public",
+          handleUploadUrl: "/api/blob-upload",
+          contentType: "application/pdf",
+          multipart: pdfBlob.size > 8 * 1024 * 1024,
+          abortSignal: uploadController.signal,
+        });
+      } finally {
+        window.clearTimeout(uploadTimeoutId);
+      }
 
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 45000);

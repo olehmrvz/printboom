@@ -1,7 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 
-const PDF_W = 1440;
-const PDF_H = 2160;
+const PDF_W = 3000;
+const PDF_H = 4500;
 
 export async function generatePrintPDF(
   _textColor: string,
