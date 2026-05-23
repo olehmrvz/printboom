@@ -53,6 +53,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printStatus, setPrintStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [printError, setPrintError] = useState("");
@@ -74,6 +75,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
 
   useEffect(() => {
     document.fonts.ready.then(() => setFontLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => {
@@ -124,8 +132,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       const mw = Math.max(0, el.clientWidth - 40);
       const mh = Math.max(0, el.clientHeight - 40);
       if (mw <= 0 || mh <= 0) return;
-      const sx = mw / FULL_W;
-      const sy = mh / FULL_H;
+      const sx = mw / stageW;
+      const sy = mh / stageH;
       setScale(Math.min(sx, sy, 0.95));
       setCanvasReady(true);
     }
@@ -133,7 +141,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [stageW, stageH]);
+
+  // Stage dimensions: reduced on mobile to prevent exceeding canvas memory limits (54MB → 13.5MB)
+  const stageScaleFactor = isMobile ? 0.5 : 1;
+  const stageW = Math.round(FULL_W * stageScaleFactor);
+  const stageH = Math.round(FULL_H * stageScaleFactor);
 
   const collageW = FULL_W - PAD_X * 2;
 
@@ -333,7 +346,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       )}
       <div className="relative" style={{ transform: `scale(${scale})`, transformOrigin: "center center", opacity: canvasReady ? 1 : 0, transition: "opacity 0.15s ease" }} onContextMenu={(e) => e.preventDefault()}>
         <div className="absolute inset-0 z-10 bg-transparent pointer-events-none select-none" aria-hidden="true" />
-        <Stage ref={stageRef} width={FULL_W} height={FULL_H}>
+        <Stage ref={stageRef} width={stageW} height={stageH} scaleX={stageScaleFactor} scaleY={stageScaleFactor}>
           <Layer>
             {/* LAYERED TYPOGRAPHY */}
             <Group y={PAD_TOP} x={PAD_X}>
