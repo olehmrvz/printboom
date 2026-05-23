@@ -60,6 +60,11 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBg, setPreviewBg] = useState<string>("#f4f4f0");
 
+  // Stage dimensions: reduced on mobile to prevent exceeding canvas memory limits (54MB → 13.5MB)
+  const stageScaleFactor = isMobile ? 0.5 : 1;
+  const stageW = Math.round(FULL_W * stageScaleFactor);
+  const stageH = Math.round(FULL_H * stageScaleFactor);
+
   useImperativeHandle(ref, () => ({
     openPrintModal: () => {
       const stage = stageRef.current;
@@ -142,11 +147,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     ro.observe(el);
     return () => ro.disconnect();
   }, [stageW, stageH]);
-
-  // Stage dimensions: reduced on mobile to prevent exceeding canvas memory limits (54MB → 13.5MB)
-  const stageScaleFactor = isMobile ? 0.5 : 1;
-  const stageW = Math.round(FULL_W * stageScaleFactor);
-  const stageH = Math.round(FULL_H * stageScaleFactor);
 
   const collageW = FULL_W - PAD_X * 2;
 
@@ -241,7 +241,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+    const pdfDataURL = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/jpeg", quality: 0.85 });
 
     let pdfBytes: Uint8Array | null = null;
     try {
