@@ -48,7 +48,7 @@ function clearAttempts(ip: string) {
   attempts.delete(ip);
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
     const ip = getClientIP(request);
 
