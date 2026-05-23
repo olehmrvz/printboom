@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
-import { upload } from "@vercel/blob/client";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
 import { generateCollageGrid } from "@/utils/collageGenerator";
@@ -271,29 +270,16 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     }
 
     try {
-      const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-      const safeNick = nick.trim().replace(/^@/, "").replace(/[^a-zA-Z0-9_.-]/g, "_");
-      const uploadController = new AbortController();
-      const uploadTimeoutId = window.setTimeout(() => uploadController.abort(), 120000);
-      let uploaded: Awaited<ReturnType<typeof upload>>;
-      try {
-        uploaded = await upload(`printboom/${safeNick || "order"}-${Date.now()}.pdf`, pdfBlob, {
-          access: "public",
-          handleUploadUrl: "/api/blob-upload",
-          contentType: "application/pdf",
-          multipart: pdfBlob.size > 8 * 1024 * 1024,
-          abortSignal: uploadController.signal,
-        });
-      } finally {
-        window.clearTimeout(uploadTimeoutId);
-      }
+      const formData = new FormData();
+      formData.append("instagramNick", nick);
+      formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
 
+      const printApiUrl = process.env.NEXT_PUBLIC_PRINT_API_URL || "/api/send-to-print";
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 45000);
-      const res = await fetch("/api/send-to-print", {
+      const timeoutId = window.setTimeout(() => controller.abort(), 180000);
+      const res = await fetch(printApiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instagramNick: nick, pdfUrl: uploaded.url }),
+        body: formData,
         signal: controller.signal,
       });
       window.clearTimeout(timeoutId);
