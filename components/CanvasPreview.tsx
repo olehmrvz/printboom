@@ -274,8 +274,11 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
 
       const res = await fetch("/api/send-to-print", { method: "POST", body: formData });
-      const json = await res.json();
-      if (json.success) {
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(json?.error || `Помилка сервера: ${res.status}`);
+      }
+      if (json?.success) {
         setPrintStatus("success");
       } else {
         setPrintStatus("error");

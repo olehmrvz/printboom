@@ -1,11 +1,21 @@
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
   if (!token || !chatId) {
-    return Response.json({ success: false, error: "Bot not configured" }, { status: 500 });
+    console.error("[send-to-print] Missing Telegram env vars", {
+      hasToken: Boolean(token),
+      hasChatId: Boolean(chatId),
+    });
+    return Response.json(
+      { success: false, error: "Telegram bot is not configured on the server" },
+      { status: 503 }
+    );
   }
 
   let fd: FormData;
@@ -46,8 +56,10 @@ export async function POST(request: Request) {
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const yyyy = now.getFullYear();
   const dateStr = `${dd}.${mm}.${yyyy}`;
-  const caption = `@${instagramNick} | ${dateStr} | 🆕 Нове`;
-  const filenameBase = `printboom_${instagramNick}_${dateStr}`;
+  const normalizedNick = instagramNick.trim().replace(/^@/, "");
+  const caption = `@${normalizedNick} | ${dateStr} | 🆕 Нове`;
+  const safeNick = normalizedNick.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  const filenameBase = `printboom_${safeNick}_${dateStr}`;
 
   const pdfBuf = Buffer.from(await pdf.arrayBuffer());
 
