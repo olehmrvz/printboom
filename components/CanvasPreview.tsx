@@ -241,12 +241,23 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    // Use PNG for print PDF because JPEG has no alpha channel and adds a solid background.
-    const pdfDataURL = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" });
-
     let pdfBytes: Uint8Array | null = null;
     try {
-      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
+      // Use PNG because JPEG has no alpha channel and adds a solid background.
+      // Vercel has a request body limit, so lower resolution until the PDF is small enough.
+      const maxUploadBytes = 4 * 1024 * 1024;
+      const pixelRatios = [0.5, 0.4, 0.3, 0.25, 0.2];
+
+      for (const pixelRatio of pixelRatios) {
+        const pdfDataURL = stage.toDataURL({ pixelRatio, mimeType: "image/png" });
+        const candidate = await generatePrintPDF(typography.color, pdfDataURL);
+        pdfBytes = candidate;
+        if (candidate.byteLength <= maxUploadBytes) break;
+      }
+
+      if (pdfBytes && pdfBytes.byteLength > maxUploadBytes) {
+        throw new Error("PDF is too large for upload");
+      }
     } catch (e) {
       console.error("PDF generation failed", e);
       setPrintStatus("error");
