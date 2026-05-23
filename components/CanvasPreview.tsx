@@ -365,10 +365,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
               {lines.map((line, i) => {
                 const yy = i * lineOverlap;
                 const isFirst = i === 0;
-                const textBlockW = measureTextWidth(line, fs, ls, typography.fontFamily);
-                const textOffsetX = Math.max(0, (collageW - textBlockW) / 2);
                 return (
-                  <Group key={`typo-${i}-${fontLoaded}`} y={yy} x={textOffsetX}>
+                  <Group key={`typo-${i}-${fontLoaded}`} y={yy} x={0}>
                     {!isFirst && (
                       <Text
                         text={line}
@@ -380,6 +378,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                         strokeWidth={os}
                         strokeScaleEnabled={false}
                         fontStyle="bold"
+                        width={collageW}
+                        align="center"
                         wrap="none"
                         listening={false}
                       />
@@ -392,6 +392,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                         letterSpacing={ls}
                         fill={typography.color}
                         fontStyle="bold"
+                        width={collageW}
+                        align="center"
                         wrap="none"
                         listening={false}
                       />
