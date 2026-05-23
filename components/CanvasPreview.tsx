@@ -288,6 +288,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
         throw new Error(json?.error || `Помилка сервера: ${res.status}`);
       }
       if (json?.success) {
+        // Non-fatal: save order for the admin dashboard after successful print sending.
+        fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instagramNick: nick }),
+        }).catch((err) => console.warn("Order save failed", err));
         setPrintStatus("success");
       } else {
         setPrintStatus("error");

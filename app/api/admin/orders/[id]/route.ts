@@ -8,9 +8,10 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const { status } = body;
+  const allowedStatuses = ["NEW", "PRINTING", "DONE", "CANCELLED"];
 
-  if (!status) {
-    return NextResponse.json({ error: "Missing status" }, { status: 400 });
+  if (!status || !allowedStatuses.includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
   if (!prisma) {

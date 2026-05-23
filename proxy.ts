@@ -49,7 +49,7 @@ function clearAttempts(ip: string) {
 }
 
 export function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  if (request.nextUrl.pathname.startsWith("/admin") || request.nextUrl.pathname.startsWith("/api/admin")) {
     const ip = getClientIP(request);
 
     // Check if IP is rate-limited
@@ -94,5 +94,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/admin/:path*",
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
