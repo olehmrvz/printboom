@@ -1,5 +1,3 @@
-import { prisma } from "@/lib/prisma";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -52,22 +50,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Save order to database (optional — unavailable on some platforms)
-  let order = null;
-  if (prisma) {
-    try {
-      order = await prisma.order.create({
-        data: {
-          instagramNick: instagramNick.trim().replace(/^@/, ""),
-          status: "NEW",
-        },
-      });
-    } catch (err: any) {
-      console.error("DB save error:", err.message);
-      // Non-fatal — still try to send via Telegram
-    }
-  }
-
   const now = new Date();
   const dd = String(now.getDate()).padStart(2, "0");
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -108,5 +90,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return Response.json({ success: true, orderId: order?.id ?? null });
+  return Response.json({ success: true });
 }
