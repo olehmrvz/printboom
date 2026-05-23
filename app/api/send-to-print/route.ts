@@ -12,8 +12,16 @@ export async function POST(request: Request) {
       hasToken: Boolean(token),
       hasChatId: Boolean(chatId),
     });
+    const missing = [
+      !token ? "TELEGRAM_BOT_TOKEN" : null,
+      !chatId ? "TELEGRAM_CHAT_ID" : null,
+    ].filter(Boolean);
+
     return Response.json(
-      { success: false, error: "Telegram bot is not configured on the server" },
+      {
+        success: false,
+        error: `Telegram bot is not configured on the server. Missing: ${missing.join(", ")}`,
+      },
       { status: 503 }
     );
   }
