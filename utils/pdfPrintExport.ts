@@ -16,8 +16,11 @@ export async function generatePrintPDF(
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const pngImage = await pdfDoc.embedPng(bytes);
-    page.drawImage(pngImage, {
+    const image = fullDataUrl.startsWith("data:image/jpeg") || fullDataUrl.startsWith("data:image/jpg")
+      ? await pdfDoc.embedJpg(bytes)
+      : await pdfDoc.embedPng(bytes);
+
+    page.drawImage(image, {
       x: 0,
       y: 0,
       width: PDF_W,
