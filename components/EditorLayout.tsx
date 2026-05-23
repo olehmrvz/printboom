@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useEditorStore } from "@/store/editorStore";
@@ -204,6 +205,12 @@ export default function EditorLayout() {
                 Виконайте всі 3 кроки, щоб відправити на друк
               </p>
             )}
+          </div>
+
+          <div className="hidden md:flex items-center justify-center gap-3 px-2 pb-3 pt-1 text-[10px] text-neutral-600">
+            <Link href="/privacy" className="hover:text-neutral-300">Privacy Policy</Link>
+            <span>•</span>
+            <Link href="/cookies" className="hover:text-neutral-300">Cookies</Link>
           </div>
 
           <div className="h-6" />
