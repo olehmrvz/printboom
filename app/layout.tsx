@@ -5,10 +5,33 @@ import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://printboom.vercel.app"),
   title: "Printboom — Конструктор колажів",
   description: "Створюйте готові до друку модні колажі для одягу",
   icons: {
     icon: "/favicon.png",
+  },
+  openGraph: {
+    title: "Printboom — Конструктор колажів",
+    description: "Створюйте готові до друку модні колажі для одягу",
+    url: "https://printboom.vercel.app",
+    siteName: "Printboom",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Printboom — Конструктор принтів",
+      },
+    ],
+    locale: "uk_UA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Printboom — Конструктор колажів",
+    description: "Створюйте готові до друку модні колажі для одягу",
+    images: ["/og-image.jpg"],
   },
 };
 
