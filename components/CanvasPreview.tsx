@@ -245,8 +245,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     try {
       // Use PNG because JPEG has no alpha channel and adds a solid background.
       // Vercel has a request body limit, so lower resolution until the PDF is small enough.
-      const maxUploadBytes = 4 * 1024 * 1024;
-      const pixelRatios = [0.5, 0.4, 0.3, 0.25, 0.2];
+      const maxUploadBytes = 3.5 * 1024 * 1024;
+      const pixelRatios = [0.25, 0.2, 0.15, 0.1];
 
       for (const pixelRatio of pixelRatios) {
         const pdfDataURL = stage.toDataURL({ pixelRatio, mimeType: "image/png" });
@@ -285,7 +285,14 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       formData.append("instagramNick", nick);
       formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
 
-      const res = await fetch("/api/send-to-print", { method: "POST", body: formData });
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 45000);
+      const res = await fetch("/api/send-to-print", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeoutId);
       const json = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(json?.error || `Помилка сервера: ${res.status}`);
@@ -298,7 +305,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       }
     } catch (err: any) {
       setPrintStatus("error");
-      setPrintError(err?.message || "Мережева помилка");
+      setPrintError(err?.name === "AbortError" ? "Відправка зайняла занадто багато часу. Спробуйте ще раз." : (err?.message || "Мережева помилка"));
     }
   };
 
