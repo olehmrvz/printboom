@@ -215,7 +215,7 @@ export default function EditorLayout() {
         <CanvasPreview ref={canvasRef} />
       </main>
 
-      <Onboarding onTabChange={(tab) => setMobileTab(tab)} />
+      <Onboarding onTabChange={(tab) => setMobileTab(tab)} onStepChange={(step) => setActiveStep(step)} />
     </div>
   );
 }

@@ -14,27 +14,27 @@ interface Step {
 
 const STEPS: Step[] = [
   {
+    selector: '[data-onboarding="templates"]',
+    title: "Виберіть текст",
+    description: "Оберіть готовий шаблон або введіть свій текст.",
+    tab: "typography",
+  },
+  {
+    selector: '[data-onboarding="colors"]',
+    title: "Налаштуйте кольори",
+    description: "Виберіть колірний пресет або задайте власні кольори.",
+    tab: "typography",
+  },
+  {
     selector: '[data-onboarding="photos"]',
     title: "Завантажте фото",
     description: "Натисніть сюди або перетягніть 6–12 фотографій для колажу.",
     tab: "photos",
   },
   {
-    selector: '[data-onboarding="templates"]',
-    title: "Виберіть текст",
-    description: "Використовуйте готові шаблони або введіть свій текст.",
-    tab: "typography",
-  },
-  {
-    selector: '[data-onboarding="colors"]',
-    title: "Налаштуйте кольори",
-    description: "Виберіть пресет або задайте свої кольори заливки та обведення.",
-    tab: "typography",
-  },
-  {
     selector: '[data-onboarding="layout"]',
     title: "Розкладка колажу",
-    description: "Виберіть відповідну сітку для розміщення фотографій.",
+    description: "Виберіть сітку для розташування фотографій.",
     tab: "photos",
   },
   {
@@ -46,7 +46,7 @@ const STEPS: Step[] = [
   {
     selector: '[data-onboarding="export"]',
     title: "Відправте на друк",
-    description: "Натисніть 'На друк' і введіть свій Instagram нік. Ми отримаємо PDF і зробимо друк.",
+    description: "Натисніть 'На друк' і введіть свій Instagram. Ми зробимо PDF і надрукуємо.",
   },
   {
     selector: '[data-onboarding="undo"]',
@@ -57,13 +57,21 @@ const STEPS: Step[] = [
 
 export default function Onboarding({
   onTabChange,
+  onStepChange,
 }: {
   onTabChange?: (tab: OnboardingTab) => void;
+  onStepChange?: (step: number) => void;
 }) {
   const { hasCompletedOnboarding, completeOnboarding } = useEditorStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+
+  const STEP_TAB_TO_DESKTOP_STEP: Record<string, number> = {
+    typography: 1,
+    photos: 2,
+    decorations: 3,
+  };
 
   useEffect(() => {
     if (!hasCompletedOnboarding) {
@@ -75,8 +83,9 @@ export default function Onboarding({
     const step = STEPS[currentStep];
     if (!step) return;
 
-    if (step.tab && onTabChange) {
-      onTabChange(step.tab);
+    if (step.tab) {
+      if (onTabChange) onTabChange(step.tab);
+      if (onStepChange) onStepChange(STEP_TAB_TO_DESKTOP_STEP[step.tab]);
     }
 
     requestAnimationFrame(() => {
@@ -87,16 +96,19 @@ export default function Onboarding({
         setRect(null);
       }
     });
-  }, [currentStep, onTabChange]);
+  }, [currentStep, onTabChange, onStepChange]);
 
   useEffect(() => {
     if (!isVisible) return;
-    updateRect();
+    const timer = setTimeout(() => updateRect(), 100);
 
     const handleResize = () => updateRect();
     window.addEventListener("resize", handleResize);
 
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [isVisible, updateRect]);
 
   const handleSkip = () => {
@@ -126,7 +138,6 @@ export default function Onboarding({
   const holeRight = rect ? rect.left + rect.width + padding : 0;
   const holeBottom = rect ? rect.top + rect.height + padding : 0;
 
-  // Tooltip positioning
   const tooltipWidth = 280;
   let tooltipLeft = rect ? rect.left + rect.width / 2 - tooltipWidth / 2 : 16;
   let tooltipTop = rect ? holeBottom + 16 : 100;
@@ -149,20 +160,16 @@ export default function Onboarding({
 
   return (
     <>
-      {/* Dark overlay with hole */}
       {rect && (
         <div className="fixed inset-0 z-40 pointer-events-none">
-          {/* Top */}
           <div
             className="absolute left-0 right-0 bg-black/75"
             style={{ top: 0, height: holeTop }}
           />
-          {/* Bottom */}
           <div
             className="absolute left-0 right-0 bg-black/75"
             style={{ top: holeBottom, bottom: 0 }}
           />
-          {/* Left */}
           <div
             className="absolute bg-black/75"
             style={{
@@ -172,7 +179,6 @@ export default function Onboarding({
               height: holeBottom - holeTop,
             }}
           />
-          {/* Right */}
           <div
             className="absolute bg-black/75"
             style={{
@@ -185,7 +191,6 @@ export default function Onboarding({
         </div>
       )}
 
-      {/* Pulsing border around target */}
       {rect && (
         <div
           className="fixed z-50 rounded-2xl border-2 border-white/80 animate-pulse pointer-events-none"
@@ -198,7 +203,6 @@ export default function Onboarding({
         />
       )}
 
-      {/* Tooltip */}
       <div
         className="fixed z-50 w-[280px] bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-5 pointer-events-auto"
         style={{ left: tooltipLeft, top: tooltipTop }}
@@ -236,7 +240,6 @@ export default function Onboarding({
         </div>
       </div>
 
-      {/* Arrow */}
       {rect && tooltipArrow === "top" && (
         <div
           className="fixed z-50 w-3 h-3 bg-[#1a1a1e] border-l border-t border-white/10 rotate-45"
