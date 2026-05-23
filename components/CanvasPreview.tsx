@@ -370,6 +370,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                     {!isFirst && (
                       <Text
                         text={line}
+                        x={ls / 2}
                         fontSize={fs}
                         fontFamily={typography.fontFamily}
                         letterSpacing={ls}
@@ -387,6 +388,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                     {isFirst && (
                       <Text
                         text={line}
+                        x={ls / 2}
                         fontSize={fs}
                         fontFamily={typography.fontFamily}
                         letterSpacing={ls}
