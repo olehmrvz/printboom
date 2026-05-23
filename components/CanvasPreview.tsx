@@ -241,7 +241,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
-    const pdfDataURL = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/jpeg", quality: 0.85 });
+    // Use PNG for print PDF because JPEG has no alpha channel and adds a solid background.
+    const pdfDataURL = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" });
 
     let pdfBytes: Uint8Array | null = null;
     try {
