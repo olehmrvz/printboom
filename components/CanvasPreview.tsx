@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
-import Konva from "konva";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
@@ -27,6 +26,35 @@ function loadImg(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function createBwImg(img: HTMLImageElement): Promise<HTMLImageElement> {
+  return new Promise((resolve) => {
+    const sourceW = img.naturalWidth || img.width;
+    const sourceH = img.naturalHeight || img.height;
+    const maxSide = 1400;
+    const ratio = Math.min(1, maxSide / Math.max(sourceW, sourceH));
+    const w = Math.max(1, Math.round(sourceW * ratio));
+    const h = Math.max(1, Math.round(sourceH * ratio));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return resolve(img);
+    ctx.drawImage(img, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      data[i] = gray;
+      data[i + 1] = gray;
+      data[i + 2] = gray;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const bwImg = new window.Image();
+    bwImg.onload = () => resolve(bwImg);
+    bwImg.src = canvas.toDataURL("image/jpeg", 0.9);
+  });
+}
+
 function isLightColor(color: string): boolean {
   const hex = color.replace("#", "");
   const r = parseInt(hex.substring(0, 2), 16);
@@ -43,6 +71,7 @@ export interface CanvasPreviewRef {
 const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const { typography, collage, decorations, updatePhoto, addPhotos } = useEditorStore();
   const [imgs, setImgs] = useState<Record<string, HTMLImageElement>>({});
+  const [bwImgs, setBwImgs] = useState<Record<string, HTMLImageElement>>({});
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
@@ -50,6 +79,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const dragCounterRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
+  const bwLoading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
@@ -119,6 +149,19 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       }
     }
   }, [collage.photos]);
+
+  useEffect(() => {
+    if (!collage.allBw) return;
+    collage.photos.forEach((p) => {
+      const img = imgs[p.id];
+      if (!img || bwImgs[p.id] || bwLoading.current.has(p.id)) return;
+      bwLoading.current.add(p.id);
+      createBwImg(img).then((bwImg) => {
+        bwLoading.current.delete(p.id);
+        setBwImgs((prev) => ({ ...prev, [p.id]: bwImg }));
+      });
+    });
+  }, [collage.allBw, collage.photos, imgs, bwImgs]);
 
   useEffect(() => {
     if (!decorations.showBarcode) return setBarcode(null);
@@ -416,8 +459,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
               {grid.map((cell) => {
                 const photo = collage.photos[cell.photoIndex];
                 if (!photo) return null;
-                const img = imgs[photo.id];
-                if (!img) return null;
+                const baseImg = imgs[photo.id];
+                if (!baseImg) return null;
+                const img = collage.allBw ? bwImgs[photo.id] || baseImg : baseImg;
                 const sc = Math.max(cell.width / img.width, cell.height / img.height);
                 const imgW = img.width * sc;
                 const imgH = img.height * sc;
@@ -450,16 +494,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                           offsetY: node.y() - baseY,
                         });
                       }}
-                      ref={(node) => {
-                        if (node) {
-                          if (collage.allBw) {
-                            node.cache();
-                          } else {
-                            node.clearCache();
-                          }
-                        }
-                      }}
-                      filters={collage.allBw ? [Konva.Filters.Grayscale] : undefined}
                     />
                   </Group>
                 );
