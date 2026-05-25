@@ -2,6 +2,22 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import { PDFDocument } from "pdf-lib";
+
+const PDF_W = 3000;
+const PDF_H = 4500;
+
+async function imageUrlToPdfBuffer(imageUrl: string): Promise<Buffer> {
+  const imageRes = await fetch(imageUrl);
+  if (!imageRes.ok) throw new Error(`Image download failed: ${imageRes.status}`);
+  const imageBytes = new Uint8Array(await imageRes.arrayBuffer());
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([PDF_W, PDF_H]);
+  const image = await pdfDoc.embedPng(imageBytes);
+  page.drawImage(image, { x: 0, y: 0, width: PDF_W, height: PDF_H });
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
+}
 
 const app = express();
 const upload = multer({
@@ -15,6 +31,8 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+app.use(express.json({ limit: "1mb" }));
 
 app.use(
   cors({
@@ -41,12 +59,14 @@ app.post("/send-to-print", upload.single("pdf"), async (req, res) => {
     return;
   }
 
-  const file = req.file;
+  const imageUrl = typeof req.body.imageUrl === "string" ? req.body.imageUrl : null;
+  const pdfUrl = typeof req.body.pdfUrl === "string" ? req.body.pdfUrl : null;
+  let file = req.file;
   const rawNick = String(req.body.instagramNick || "").trim();
   const normalizedNick = rawNick.replace(/^@/, "");
 
-  if (!file || !normalizedNick) {
-    res.status(400).json({ success: false, error: "Missing PDF or instagramNick" });
+  if ((!file && !imageUrl && !pdfUrl) || !normalizedNick) {
+    res.status(400).json({ success: false, error: "Missing PDF/image URL or instagramNick" });
     return;
   }
 
@@ -63,11 +83,17 @@ app.post("/send-to-print", upload.single("pdf"), async (req, res) => {
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
     tgForm.append("caption", caption);
-    tgForm.append(
-      "document",
-      new Blob([new Uint8Array(file.buffer)], { type: "application/pdf" }),
-      filename
-    );
+
+    if (pdfUrl) {
+      tgForm.append("document", pdfUrl);
+    } else {
+      const pdfBuffer = file ? Buffer.from(file.buffer) : await imageUrlToPdfBuffer(imageUrl!);
+      tgForm.append(
+        "document",
+        new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }),
+        filename
+      );
+    }
 
     const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
       method: "POST",

@@ -327,7 +327,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       const timeoutId = window.setTimeout(() => controller.abort(), 180000);
       let res: Response;
 
-      if (isMobile && imageBlob && printApiUrl === "/api/send-to-print") {
+      if (isMobile && imageBlob) {
         const uploaded = await upload(`printboom-${Date.now()}.png`, imageBlob, {
           access: "public",
           handleUploadUrl: "/api/blob-upload",
