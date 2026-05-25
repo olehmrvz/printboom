@@ -65,7 +65,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const stageW = Math.round(FULL_W * stageScaleFactor);
   const stageH = Math.round(FULL_H * stageScaleFactor);
 
-  const exportStageDataURL = (stage: any, pixelRatio: number) => {
+  const exportStageDataURL = (stage: any, pixelRatio: number, mimeType = "image/png", quality?: number) => {
     const canvas = stage.toCanvas({ pixelRatio });
 
     // On mobile the live B/W preview is CSS-based to avoid Konva cache crashes.
@@ -94,7 +94,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       }
     }
 
-    return canvas.toDataURL("image/png");
+    return canvas.toDataURL(mimeType, quality);
   };
 
   useImperativeHandle(ref, () => ({
@@ -283,9 +283,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
 
     let pdfBytes: Uint8Array | null = null;
     try {
-      // Full-size PNG keeps transparency and print quality (3000x4500).
-      // The generated PDF is uploaded directly to Vercel Blob, not through our API body.
-      const pdfDataURL = exportStageDataURL(stage, isMobile ? 1.5 : 1);
+      // Mobile uploads were failing because PNG-in-PDF can become too large for
+      // mobile networks/browser memory. Use JPEG only for the final mobile
+      // upload; desktop keeps lossless PNG.
+      const pdfDataURL = isMobile
+        ? exportStageDataURL(stage, 1.5, "image/jpeg", 0.9)
+        : exportStageDataURL(stage, 1, "image/png");
       pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
