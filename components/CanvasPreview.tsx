@@ -268,16 +268,23 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    stage.width(FULL_W);
-    stage.height(FULL_H);
-    stage.scale({ x: 1, y: 1 });
-    stage.draw();
+    // Desktop can safely switch the stage to the full print size.
+    // On mobile we keep the lightweight preview stage (1500×2250, scale 0.5)
+    // and export it with pixelRatio=2 below. The final PNG is still 3000×4500,
+    // but we avoid rebuilding the live Konva stage at full size, which was
+    // causing mobile browsers to reload the tab.
+    if (!isMobile) {
+      stage.width(FULL_W);
+      stage.height(FULL_H);
+      stage.scale({ x: 1, y: 1 });
+      stage.draw();
+    }
 
     let pdfBytes: Uint8Array | null = null;
     try {
       // Full-size PNG keeps transparency and print quality (3000x4500).
       // The generated PDF is uploaded directly to Vercel Blob, not through our API body.
-      const pdfDataURL = exportStageDataURL(stage, 1);
+      const pdfDataURL = exportStageDataURL(stage, isMobile ? 2 : 1);
       pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
