@@ -50,7 +50,7 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/send-to-print", upload.single("pdf"), async (req, res) => {
+app.post("/send-to-print", upload.fields([{ name: "pdf", maxCount: 1 }, { name: "image", maxCount: 1 }]), async (req, res) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -61,12 +61,14 @@ app.post("/send-to-print", upload.single("pdf"), async (req, res) => {
 
   const imageUrl = typeof req.body.imageUrl === "string" ? req.body.imageUrl : null;
   const pdfUrl = typeof req.body.pdfUrl === "string" ? req.body.pdfUrl : null;
-  let file = req.file;
+  const files = req.files as { pdf?: Express.Multer.File[]; image?: Express.Multer.File[] } | undefined;
+  const file = files?.pdf?.[0];
+  const imageFile = files?.image?.[0];
   const rawNick = String(req.body.instagramNick || "").trim();
   const normalizedNick = rawNick.replace(/^@/, "");
 
-  if ((!file && !imageUrl && !pdfUrl) || !normalizedNick) {
-    res.status(400).json({ success: false, error: "Missing PDF/image URL or instagramNick" });
+  if ((!file && !imageFile && !imageUrl && !pdfUrl) || !normalizedNick) {
+    res.status(400).json({ success: false, error: "Missing PDF/image or instagramNick" });
     return;
   }
 
@@ -87,7 +89,18 @@ app.post("/send-to-print", upload.single("pdf"), async (req, res) => {
     if (pdfUrl) {
       tgForm.append("document", pdfUrl);
     } else {
-      const pdfBuffer = file ? Buffer.from(file.buffer) : await imageUrlToPdfBuffer(imageUrl!);
+      let pdfBuffer: Buffer;
+      if (file) {
+        pdfBuffer = Buffer.from(file.buffer);
+      } else if (imageFile) {
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([PDF_W, PDF_H]);
+        const image = await pdfDoc.embedPng(new Uint8Array(imageFile.buffer));
+        page.drawImage(image, { x: 0, y: 0, width: PDF_W, height: PDF_H });
+        pdfBuffer = Buffer.from(await pdfDoc.save());
+      } else {
+        pdfBuffer = await imageUrlToPdfBuffer(imageUrl!);
+      }
       tgForm.append(
         "document",
         new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }),

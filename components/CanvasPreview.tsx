@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
-import { upload } from "@vercel/blob/client";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
@@ -327,27 +326,20 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       const timeoutId = window.setTimeout(() => controller.abort(), 180000);
       let res: Response;
 
+      const formData = new FormData();
+      formData.append("instagramNick", nick);
       if (isMobile && imageBlob) {
-        const uploaded = await upload(`printboom-${Date.now()}.png`, imageBlob, {
-          access: "public",
-          handleUploadUrl: "/api/blob-upload",
-        });
-        res = await fetch(printApiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ instagramNick: nick, imageUrl: uploaded.url }),
-          signal: controller.signal,
-        });
+        // Mobile sends a transparent PNG to Railway; Railway wraps it into PDF.
+        // No Vercel Blob involved.
+        formData.append("image", imageBlob, "printboom.png");
       } else {
-        const formData = new FormData();
-        formData.append("instagramNick", nick);
         formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
-        res = await fetch(printApiUrl, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-        });
       }
+      res = await fetch(printApiUrl, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
       window.clearTimeout(timeoutId);
       const json = await res.json().catch(() => null);
       if (!res.ok) {
