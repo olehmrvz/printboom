@@ -52,7 +52,6 @@ export default function TypographySettings({ hideHeader = false }: { hideHeader?
 
   const isPrimaryActive = PRIMARY_TEMPLATES.includes(typography.template);
   const isMoreActive = MORE_TEMPLATES.includes(typography.template);
-  const lineSpacing = Number.isFinite(typography.lineSpacing) ? typography.lineSpacing : 0;
 
   return (
     <div className="space-y-5">
@@ -137,13 +136,13 @@ export default function TypographySettings({ hideHeader = false }: { hideHeader?
             Міжрядковий інтервал
           </label>
           <span className="text-[10px] text-neutral-400 font-mono">
-            база + {lineSpacing}px
+            база + {typography.lineSpacing}px
           </span>
         </div>
         <StyledRange
           min={0}
           max={220}
-          value={lineSpacing}
+          value={typography.lineSpacing}
           onChange={(v) => setTypography({ lineSpacing: v })}
         />
       </div>

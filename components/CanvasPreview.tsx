@@ -183,14 +183,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const fs = autoFit.fontSize;
   const ls = autoFit.letterSpacing;
   const os = Math.max(9, typography.outlineThickness);
-  const lineSpacing = Number.isFinite(typography.lineSpacing) ? Math.max(0, typography.lineSpacing) : 0;
   const baseLineStep = fs * 0.35;
-  const lineStep = baseLineStep + lineSpacing;
+  const lineStep = baseLineStep + typography.lineSpacing;
 
   const lines = useMemo(() => splitText(typography.text), [typography.text]);
   const dateStr = useMemo(() => formatDate(), []);
 
-  const extraCanvasHeight = lineSpacing * Math.max(0, lines.length - 1);
+  const extraCanvasHeight = Math.max(0, typography.lineSpacing) * Math.max(0, lines.length - 1);
   const canvasH = FULL_H + extraCanvasHeight;
   const stageW = Math.round(FULL_W * stageScaleFactor);
   const stageH = Math.round(canvasH * stageScaleFactor);
