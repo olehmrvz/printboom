@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
-import Konva from "konva";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
@@ -27,6 +26,32 @@ function loadImg(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function makeGrayscaleImage(img: HTMLImageElement, maxSide = 1600): Promise<HTMLImageElement> {
+  return new Promise((resolve) => {
+    const ratio = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+    const width = Math.max(1, Math.round((img.naturalWidth || img.width) * ratio));
+    const height = Math.max(1, Math.round((img.naturalHeight || img.height) * ratio));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return resolve(img);
+    ctx.drawImage(img, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      data[i] = gray;
+      data[i + 1] = gray;
+      data[i + 2] = gray;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const bw = new window.Image();
+    bw.onload = () => resolve(bw);
+    bw.src = canvas.toDataURL("image/jpeg", 0.9);
+  });
+}
+
 function isLightColor(color: string): boolean {
   const hex = color.replace("#", "");
   const r = parseInt(hex.substring(0, 2), 16);
@@ -43,6 +68,7 @@ export interface CanvasPreviewRef {
 const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const { typography, collage, decorations, updatePhoto, addPhotos } = useEditorStore();
   const [imgs, setImgs] = useState<Record<string, HTMLImageElement>>({});
+  const [bwImgs, setBwImgs] = useState<Record<string, HTMLImageElement>>({});
   const [barcode, setBarcode] = useState<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
   const [fontLoaded, setFontLoaded] = useState(false);
@@ -50,6 +76,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const dragCounterRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const loading = useRef<Set<string>>(new Set());
+  const bwLoading = useRef<Set<string>>(new Set());
   const stageRef = useRef<any>(null);
   const [scale, setScale] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
@@ -62,8 +89,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
 
   // Stage dimensions: reduced on mobile to prevent exceeding canvas memory limits (54MB → 13.5MB)
   const stageScaleFactor = isMobile ? 0.5 : 1;
-  const stageW = Math.round(FULL_W * stageScaleFactor);
-  const stageH = Math.round(FULL_H * stageScaleFactor);
 
   useImperativeHandle(ref, () => ({
     openPrintModal: () => {
@@ -121,6 +146,25 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   }, [collage.photos]);
 
   useEffect(() => {
+    if (!collage.allBw) return;
+    for (const p of collage.photos) {
+      const img = imgs[p.id];
+      if (!img || bwImgs[p.id] || bwLoading.current.has(p.id)) continue;
+      bwLoading.current.add(p.id);
+      makeGrayscaleImage(img).then((bw) => {
+        bwLoading.current.delete(p.id);
+        setBwImgs((prev) => ({ ...prev, [p.id]: bw }));
+      });
+    }
+  }, [collage.allBw, collage.photos, imgs, bwImgs]);
+
+  useEffect(() => {
+    const ids = new Set(collage.photos.map((p) => p.id));
+    setImgs((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => ids.has(id))));
+    setBwImgs((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => ids.has(id))));
+  }, [collage.photos]);
+
+  useEffect(() => {
     if (!decorations.showBarcode) return setBarcode(null);
     const svg = generateBarcodeSVG(700, 90, decorations.barcodeColor);
     const url = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
@@ -128,6 +172,27 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     img.onload = () => setBarcode(img);
     img.src = url;
   }, [decorations.showBarcode, decorations.barcodeColor]);
+
+  const collageW = FULL_W - PAD_X * 2;
+
+  const autoFit = useMemo(
+    () => calcAutoFitFontSize(typography.text, collageW, typography.fontFamily, 560, 480),
+    [typography.text, collageW, typography.fontFamily, fontLoaded]
+  );
+
+  const fs = autoFit.fontSize;
+  const ls = autoFit.letterSpacing;
+  const os = Math.max(9, typography.outlineThickness);
+  const baseLineStep = fs * 0.35;
+  const lineStep = baseLineStep + typography.lineSpacing;
+
+  const lines = useMemo(() => splitText(typography.text), [typography.text]);
+  const dateStr = useMemo(() => formatDate(), []);
+
+  const extraCanvasHeight = Math.max(0, typography.lineSpacing) * Math.max(0, lines.length - 1);
+  const canvasH = FULL_H + extraCanvasHeight;
+  const stageW = Math.round(FULL_W * stageScaleFactor);
+  const stageH = Math.round(canvasH * stageScaleFactor);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -148,22 +213,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     return () => ro.disconnect();
   }, [stageW, stageH]);
 
-  const collageW = FULL_W - PAD_X * 2;
-
-  const autoFit = useMemo(
-    () => calcAutoFitFontSize(typography.text, collageW, typography.fontFamily, 560, 480),
-    [typography.text, collageW, typography.fontFamily, fontLoaded]
-  );
-
-  const fs = autoFit.fontSize;
-  const ls = autoFit.letterSpacing;
-  const os = Math.max(9, typography.outlineThickness);
-  const lineOverlap = fs * 0.35;
-
-  const lines = useMemo(() => splitText(typography.text), [typography.text]);
-  const dateStr = useMemo(() => formatDate(), []);
-
-  const typoHeight = fs + (lines.length - 1) * lineOverlap;
+  const typoHeight = fs + (lines.length - 1) * lineStep;
   const collageY = PAD_TOP + typoHeight + GAP_TYPO_COLLAGE;
 
   // Bottom strip layout
@@ -200,7 +250,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const taglineLineCount = processedTagline.includes("\n") ? 2 : (processedTagline ? 1 : 0);
   const row2Height = bottomFontSize * (taglineLineCount <= 1 ? 1.5 : taglineLineCount);
   const bottomStripHeight = bottomFontSize + 20 + row2Height + 20;
-  const bottomStripY = FULL_H - bottomStripHeight - 40;
+  const bottomStripY = canvasH - bottomStripHeight - 40;
 
   // Ensure collage doesn't overlap bottom strip
   const collageH = Math.max(200, bottomStripY - collageY - GAP_TYPO_COLLAGE);
@@ -237,7 +287,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const originalScaleY = stage.scaleY();
 
     stage.width(FULL_W);
-    stage.height(FULL_H);
+    stage.height(canvasH);
     stage.scale({ x: 1, y: 1 });
     stage.draw();
 
@@ -246,7 +296,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       // Full-size PNG keeps transparency and print quality (3000x4500).
       // The generated PDF is uploaded directly to Vercel Blob, not through our API body.
       const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
-      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
+      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL, FULL_W, canvasH);
     } catch (e) {
       console.error("PDF generation failed", e);
       setPrintStatus("error");
@@ -363,7 +413,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
             {/* LAYERED TYPOGRAPHY */}
             <Group y={PAD_TOP} x={PAD_X}>
               {lines.map((line, i) => {
-                const yy = i * lineOverlap;
+                const yy = i * lineStep;
                 const isFirst = i === 0;
                 return (
                   <Group key={`typo-${i}-${fontLoaded}`} y={yy} x={0}>
@@ -416,8 +466,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
               {grid.map((cell) => {
                 const photo = collage.photos[cell.photoIndex];
                 if (!photo) return null;
-                const img = imgs[photo.id];
-                if (!img) return null;
+                const originalImg = imgs[photo.id];
+                if (!originalImg) return null;
+                const img = collage.allBw ? bwImgs[photo.id] || originalImg : originalImg;
                 const sc = Math.max(cell.width / img.width, cell.height / img.height);
                 const imgW = img.width * sc;
                 const imgH = img.height * sc;
@@ -450,16 +501,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                           offsetY: node.y() - baseY,
                         });
                       }}
-                      ref={(node) => {
-                        if (node) {
-                          if (collage.allBw) {
-                            node.cache();
-                          } else {
-                            node.clearCache();
-                          }
-                        }
-                      }}
-                      filters={collage.allBw ? [Konva.Filters.Grayscale] : undefined}
                     />
                   </Group>
                 );

@@ -5,10 +5,12 @@ const PDF_H = 4500;
 
 export async function generatePrintPDF(
   _textColor: string,
-  fullDataUrl: string | null
+  fullDataUrl: string | null,
+  width = PDF_W,
+  height = PDF_H
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([PDF_W, PDF_H]);
+  const page = pdfDoc.addPage([width, height]);
 
   // Embed full raster (photos + text + barcode + everything) at print quality
   if (fullDataUrl) {
@@ -23,8 +25,8 @@ export async function generatePrintPDF(
     page.drawImage(image, {
       x: 0,
       y: 0,
-      width: PDF_W,
-      height: PDF_H,
+      width,
+      height,
     });
   }
 
