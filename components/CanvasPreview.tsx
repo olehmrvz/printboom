@@ -268,15 +268,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    // Mobile browsers often reload the tab when we upscale the stage to the
-    // full 3000×4500 print canvas. Keep the already-rendered 1500×2250 mobile
-    // stage for export and let the PDF place it on the print page.
-    if (!isMobile) {
-      stage.width(FULL_W);
-      stage.height(FULL_H);
-      stage.scale({ x: 1, y: 1 });
-      stage.draw();
-    }
+    stage.width(FULL_W);
+    stage.height(FULL_H);
+    stage.scale({ x: 1, y: 1 });
+    stage.draw();
 
     let pdfBytes: Uint8Array | null = null;
     try {
