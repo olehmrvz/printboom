@@ -66,7 +66,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const stageW = Math.round(FULL_W * stageScaleFactor);
   const stageH = Math.round(FULL_H * stageScaleFactor);
 
-  const exportStageDataURL = (stage: any, pixelRatio: number, mimeType = "image/png", quality?: number) => {
+  const renderStageCanvas = (stage: any, pixelRatio: number) => {
     const canvas = stage.toCanvas({ pixelRatio });
 
     // On mobile the live B/W preview is CSS-based to avoid Konva cache crashes.
@@ -95,7 +95,21 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       }
     }
 
-    return canvas.toDataURL(mimeType, quality);
+    return canvas;
+  };
+
+  const exportStageDataURL = (stage: any, pixelRatio: number, mimeType = "image/png", quality?: number) => {
+    return renderStageCanvas(stage, pixelRatio).toDataURL(mimeType, quality);
+  };
+
+  const exportStageBlob = (stage: any, pixelRatio: number): Promise<Blob> => {
+    const canvas = renderStageCanvas(stage, pixelRatio);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob: Blob | null) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Canvas export failed"));
+      }, "image/png");
+    });
   };
 
   useImperativeHandle(ref, () => ({
@@ -269,21 +283,26 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    stage.width(FULL_W);
-    stage.height(FULL_H);
-    stage.scale({ x: 1, y: 1 });
-    stage.draw();
-
     let pdfBytes: Uint8Array | null = null;
+    let imageBlob: Blob | null = null;
     try {
-      // Keep PNG so the PDF stays transparent. Mobile sends the large PDF via
-      // Vercel Blob below instead of pushing it through our API request body.
-      const pdfDataURL = exportStageDataURL(stage, 1, "image/png");
-      pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
+      if (isMobile) {
+        // Mobile: do NOT build PDF in the browser. Export a transparent PNG
+        // blob from the lightweight preview stage, upload it, and let the
+        // server wrap it into a 3000×4500 PDF before sending to Telegram.
+        imageBlob = await exportStageBlob(stage, 2);
+      } else {
+        stage.width(FULL_W);
+        stage.height(FULL_H);
+        stage.scale({ x: 1, y: 1 });
+        stage.draw();
+        const pdfDataURL = exportStageDataURL(stage, 1, "image/png");
+        pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
+      }
     } catch (e) {
-      console.error("PDF generation failed", e);
+      console.error("Print export failed", e);
       setPrintStatus("error");
-      setPrintError("Помилка генерації PDF");
+      setPrintError("Помилка генерації файлу для друку");
       stage.width(originalW);
       stage.height(originalH);
       stage.scale({ x: originalScaleX, y: originalScaleY });
@@ -296,9 +315,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     stage.scale({ x: originalScaleX, y: originalScaleY });
     stage.draw();
 
-    if (!pdfBytes) {
+    if (!pdfBytes && !imageBlob) {
       setPrintStatus("error");
-      setPrintError("PDF не згенеровано");
+      setPrintError("Файл не згенеровано");
       return;
     }
 
@@ -308,16 +327,15 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
       const timeoutId = window.setTimeout(() => controller.abort(), 180000);
       let res: Response;
 
-      if (isMobile && printApiUrl === "/api/send-to-print") {
-        const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-        const uploaded = await upload(`printboom-${Date.now()}.pdf`, pdfBlob, {
+      if (isMobile && imageBlob && printApiUrl === "/api/send-to-print") {
+        const uploaded = await upload(`printboom-${Date.now()}.png`, imageBlob, {
           access: "public",
           handleUploadUrl: "/api/blob-upload",
         });
         res = await fetch(printApiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ instagramNick: nick, pdfUrl: uploaded.url }),
+          body: JSON.stringify({ instagramNick: nick, imageUrl: uploaded.url }),
           signal: controller.signal,
         });
       } else {

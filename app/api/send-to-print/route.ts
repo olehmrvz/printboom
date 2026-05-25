@@ -1,5 +1,22 @@
+import { PDFDocument } from "pdf-lib";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const PDF_W = 3000;
+const PDF_H = 4500;
+
+async function imageUrlToPdfFile(imageUrl: string): Promise<File> {
+  const imageRes = await fetch(imageUrl);
+  if (!imageRes.ok) throw new Error(`Image download failed: ${imageRes.status}`);
+  const imageBytes = new Uint8Array(await imageRes.arrayBuffer());
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([PDF_W, PDF_H]);
+  const image = await pdfDoc.embedPng(imageBytes);
+  page.drawImage(image, { x: 0, y: 0, width: PDF_W, height: PDF_H });
+  const pdfBytes = await pdfDoc.save();
+  return new File([pdfBytes as unknown as BlobPart], "printboom.pdf", { type: "application/pdf" });
+}
 
 export async function POST(request: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -26,6 +43,7 @@ export async function POST(request: Request) {
 
   let pdf: File | null = null;
   let pdfUrl: string | null = null;
+  let imageUrl: string | null = null;
   let instagramNick: string | null = null;
 
   try {
@@ -33,6 +51,7 @@ export async function POST(request: Request) {
     if (contentType.includes("application/json")) {
       const body = await request.json();
       pdfUrl = typeof body.pdfUrl === "string" ? body.pdfUrl : null;
+      imageUrl = typeof body.imageUrl === "string" ? body.imageUrl : null;
       instagramNick = typeof body.instagramNick === "string" ? body.instagramNick : null;
     } else {
       const fd = await request.formData();
@@ -43,7 +62,7 @@ export async function POST(request: Request) {
     return Response.json({ success: false, error: "Invalid request data" }, { status: 400 });
   }
 
-  if ((!pdf && !pdfUrl) || !instagramNick) {
+  if ((!pdf && !pdfUrl && !imageUrl) || !instagramNick) {
     return Response.json(
       { success: false, error: "Missing PDF/PDF URL or instagramNick" },
       { status: 400 }
@@ -62,6 +81,10 @@ export async function POST(request: Request) {
 
   // Send PDF
   try {
+    if (!pdf && imageUrl) {
+      pdf = await imageUrlToPdfFile(imageUrl);
+    }
+
     const tgForm = new FormData();
     tgForm.append("chat_id", chatId);
     if (pdfUrl) {
