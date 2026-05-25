@@ -65,11 +65,36 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const stageW = Math.round(FULL_W * stageScaleFactor);
   const stageH = Math.round(FULL_H * stageScaleFactor);
 
+  const exportStageDataURL = (stage: any, pixelRatio: number) => {
+    const useTemporaryBw = collage.allBw && isMobile;
+    const photoNodes = useTemporaryBw ? stage.find(".photo-image") : [];
+
+    if (useTemporaryBw) {
+      photoNodes.forEach((node: any) => {
+        node.filters([Konva.Filters.Grayscale]);
+        node.cache({ pixelRatio: 0.5 });
+      });
+      stage.draw();
+    }
+
+    try {
+      return stage.toDataURL({ pixelRatio, mimeType: "image/png" });
+    } finally {
+      if (useTemporaryBw) {
+        photoNodes.forEach((node: any) => {
+          node.filters([]);
+          node.clearCache();
+        });
+        stage.draw();
+      }
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     openPrintModal: () => {
       const stage = stageRef.current;
       if (stage) {
-        const url = stage.toDataURL({ pixelRatio: 0.25, mimeType: "image/png" });
+        const url = exportStageDataURL(stage, 0.25);
         setPreviewUrl(url);
       }
       setPreviewBg(isLightText ? "#171717" : "#f4f4f0");
@@ -245,7 +270,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     try {
       // Full-size PNG keeps transparency and print quality (3000x4500).
       // The generated PDF is uploaded directly to Vercel Blob, not through our API body.
-      const pdfDataURL = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+      const pdfDataURL = exportStageDataURL(stage, 1);
       pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
@@ -442,6 +467,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                 return (
                   <Group key={photo.id} x={cell.x} y={cell.y} clipX={0} clipY={0} clipWidth={cell.width} clipHeight={cell.height}>
                     <KonvaImage
+                      name="photo-image"
                       image={img}
                       x={posX}
                       y={posY}
