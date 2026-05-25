@@ -129,24 +129,6 @@ export default function TypographySettings({ hideHeader = false }: { hideHeader?
         )}
       </div>
 
-      {/* Line spacing */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
-            Міжрядковий інтервал
-          </label>
-          <span className="text-[10px] text-neutral-400 font-mono">
-            база + {typography.lineSpacing}px
-          </span>
-        </div>
-        <StyledRange
-          min={0}
-          max={220}
-          value={typography.lineSpacing}
-          onChange={(v) => setTypography({ lineSpacing: v })}
-        />
-      </div>
-
       {/* Color Presets */}
       <div data-onboarding="colors" className="space-y-2">
         <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">

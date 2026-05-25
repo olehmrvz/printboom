@@ -124,7 +124,7 @@ export const DEFAULT_TYPOGRAPHY: TypographyConfig = {
   template: "CUSTOM",
   style: "both",
   fontSize: 120,
-  lineSpacing: 0,
+  lineSpacing: 10,
   color: "#000000",
   outlineColor: "#000000",
   outlineThickness: 9,
