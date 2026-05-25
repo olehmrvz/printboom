@@ -66,28 +66,35 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const stageH = Math.round(FULL_H * stageScaleFactor);
 
   const exportStageDataURL = (stage: any, pixelRatio: number) => {
-    const useTemporaryBw = collage.allBw && isMobile;
-    const photoNodes = useTemporaryBw ? stage.find(".photo-image") : [];
+    const canvas = stage.toCanvas({ pixelRatio });
 
-    if (useTemporaryBw) {
-      photoNodes.forEach((node: any) => {
-        node.filters([Konva.Filters.Grayscale]);
-        node.cache({ pixelRatio: 0.5 });
-      });
-      stage.draw();
-    }
-
-    try {
-      return stage.toDataURL({ pixelRatio, mimeType: "image/png" });
-    } finally {
-      if (useTemporaryBw) {
-        photoNodes.forEach((node: any) => {
-          node.filters([]);
-          node.clearCache();
-        });
-        stage.draw();
+    // On mobile the live B/W preview is CSS-based to avoid Konva cache crashes.
+    // CSS filters are not included in canvas export, so grayscale only the collage
+    // pixels after rendering. This avoids creating heavy cached Konva nodes.
+    if (collage.allBw && isMobile) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (ctx) {
+        const scaleX = (stage.scaleX?.() ?? 1) * pixelRatio;
+        const scaleY = (stage.scaleY?.() ?? 1) * pixelRatio;
+        const x = Math.max(0, Math.round(PAD_X * scaleX));
+        const y = Math.max(0, Math.round(collageY * scaleY));
+        const w = Math.min(canvas.width - x, Math.round(collageW * scaleX));
+        const h = Math.min(canvas.height - y, Math.round(collageH * scaleY));
+        if (w > 0 && h > 0) {
+          const imageData = ctx.getImageData(x, y, w, h);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+            data[i] = gray;
+            data[i + 1] = gray;
+            data[i + 2] = gray;
+          }
+          ctx.putImageData(imageData, x, y);
+        }
       }
     }
+
+    return canvas.toDataURL("image/png");
   };
 
   useImperativeHandle(ref, () => ({
