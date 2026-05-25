@@ -204,7 +204,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
   const fs = autoFit.fontSize;
   const ls = autoFit.letterSpacing;
   const os = Math.max(9, typography.outlineThickness);
-  const lineOverlap = fs * 0.35;
+  const baseLineOverlap = fs * 0.35;
+  const lineSpacingExtra = Math.max(0, typography.lineSpacing - 10);
+  const lineOverlap = baseLineOverlap + lineSpacingExtra;
 
   const lines = useMemo(() => splitText(typography.text), [typography.text]);
   const dateStr = useMemo(() => formatDate(), []);

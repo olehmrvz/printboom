@@ -52,6 +52,7 @@ export default function TypographySettings({ hideHeader = false }: { hideHeader?
 
   const isPrimaryActive = PRIMARY_TEMPLATES.includes(typography.template);
   const isMoreActive = MORE_TEMPLATES.includes(typography.template);
+  const lineSpacing = Number.isFinite(typography.lineSpacing) ? typography.lineSpacing : 10;
 
   return (
     <div className="space-y-5">
@@ -127,6 +128,24 @@ export default function TypographySettings({ hideHeader = false }: { hideHeader?
             ))}
           </div>
         )}
+      </div>
+
+      {/* Line spacing */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
+            Міжрядковий інтервал
+          </label>
+          <span className="text-[10px] text-neutral-400 font-mono">
+            {lineSpacing === 10 ? "база" : `+${lineSpacing - 10}px`}
+          </span>
+        </div>
+        <StyledRange
+          min={10}
+          max={220}
+          value={lineSpacing}
+          onChange={(v) => setTypography({ lineSpacing: v })}
+        />
       </div>
 
       {/* Color Presets */}
