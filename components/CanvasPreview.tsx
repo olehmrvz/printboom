@@ -356,7 +356,17 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
           </div>
         </div>
       )}
-      <div className="relative" style={{ transform: `scale(${scale})`, transformOrigin: "center center", opacity: canvasReady ? 1 : 0, transition: "opacity 0.15s ease" }} onContextMenu={(e) => e.preventDefault()}>
+      <div
+        className="relative"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "center center",
+          opacity: canvasReady ? 1 : 0,
+          transition: "opacity 0.15s ease",
+          filter: collage.allBw && isMobile ? "grayscale(1)" : "none",
+        }}
+        onContextMenu={(e) => e.preventDefault()}
+      >
         <div className="absolute inset-0 z-10 bg-transparent pointer-events-none select-none" aria-hidden="true" />
         <Stage ref={stageRef} width={stageW} height={stageH} scaleX={stageScaleFactor} scaleY={stageScaleFactor}>
           <Layer>
@@ -451,15 +461,14 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
                         });
                       }}
                       ref={(node) => {
-                        if (node) {
-                          if (collage.allBw) {
-                            node.cache();
-                          } else {
-                            node.clearCache();
-                          }
+                        if (!node) return;
+                        if (collage.allBw && !isMobile) {
+                          node.cache();
+                        } else {
+                          node.clearCache();
                         }
                       }}
-                      filters={collage.allBw ? [Konva.Filters.Grayscale] : undefined}
+                      filters={collage.allBw && !isMobile ? [Konva.Filters.Grayscale] : undefined}
                     />
                   </Group>
                 );
