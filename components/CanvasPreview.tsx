@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import Konva from "konva";
+import { upload } from "@vercel/blob/client";
 import { Stage, Layer, Text, Rect, Group, Image as KonvaImage } from "react-konva";
 import { useEditorStore } from "@/store/editorStore";
 import { splitText, calcAutoFitFontSize, measureTextWidth } from "@/utils/typographyUtils";
@@ -268,27 +269,16 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     const originalScaleX = stage.scaleX();
     const originalScaleY = stage.scaleY();
 
-    // Desktop can safely switch the stage to the full print size.
-    // On mobile we keep the lightweight preview stage (1500×2250, scale 0.5)
-    // and export it with pixelRatio=1.5 below. This keeps print quality higher
-    // than preview while avoiding an oversized upload on mobile networks.
-    // but we avoid rebuilding the live Konva stage at full size, which was
-    // causing mobile browsers to reload the tab.
-    if (!isMobile) {
-      stage.width(FULL_W);
-      stage.height(FULL_H);
-      stage.scale({ x: 1, y: 1 });
-      stage.draw();
-    }
+    stage.width(FULL_W);
+    stage.height(FULL_H);
+    stage.scale({ x: 1, y: 1 });
+    stage.draw();
 
     let pdfBytes: Uint8Array | null = null;
     try {
-      // Mobile uploads were failing because PNG-in-PDF can become too large for
-      // mobile networks/browser memory. Use JPEG only for the final mobile
-      // upload; desktop keeps lossless PNG.
-      const pdfDataURL = isMobile
-        ? exportStageDataURL(stage, 1.5, "image/jpeg", 0.9)
-        : exportStageDataURL(stage, 1, "image/png");
+      // Keep PNG so the PDF stays transparent. Mobile sends the large PDF via
+      // Vercel Blob below instead of pushing it through our API request body.
+      const pdfDataURL = exportStageDataURL(stage, 1, "image/png");
       pdfBytes = await generatePrintPDF(typography.color, pdfDataURL);
     } catch (e) {
       console.error("PDF generation failed", e);
@@ -313,18 +303,33 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, {}>((props, ref) => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("instagramNick", nick);
-      formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
-
       const printApiUrl = process.env.NEXT_PUBLIC_PRINT_API_URL || "/api/send-to-print";
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 180000);
-      const res = await fetch(printApiUrl, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
+      let res: Response;
+
+      if (isMobile && printApiUrl === "/api/send-to-print") {
+        const pdfBlob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+        const uploaded = await upload(`printboom-${Date.now()}.pdf`, pdfBlob, {
+          access: "public",
+          handleUploadUrl: "/api/blob-upload",
+        });
+        res = await fetch(printApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instagramNick: nick, pdfUrl: uploaded.url }),
+          signal: controller.signal,
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("instagramNick", nick);
+        formData.append("pdf", new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" }), "printboom.pdf");
+        res = await fetch(printApiUrl, {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+      }
       window.clearTimeout(timeoutId);
       const json = await res.json().catch(() => null);
       if (!res.ok) {
